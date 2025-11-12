@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>$ Vender Tlapa</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <style>
+
+        /* Remove up and down changers in numeric inputs */
+
+        /* Chrome, Safari, Edge, Opera */
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+          -webkit-appearance: none;
+          margin: 0;
+        }
+
+        /* Firefox */
+        input[type=number] {
+          -moz-appearance: textfield;
+        }
+
+        #scanner, #scanner-mac, video {
+            width: 400px;
+            height: 200px;
+            margin-bottom: 10px;
+            border: 2px solid #007bff;
+            transform: scaleX(-1);
+            background-color: transparent;
+            object-fit: cover;     /* fill the box, crop edges if needed */
+        }
+        #estado { margin-bottom: 5px; font-weight: bold; display: none;}
+        #mensaje { margin-bottom: 10px; color: red; font-weight: bold; }
+        #btn-escanear { display: none; margin-bottom: 10px; }
+        #btn-guardar { float: right; margin-bottom: 10px; display: none;}
+
+        #toggle-camera {
+          background-color: rgba(255, 255, 255, 0.8);
+          color: #000;
+          border: 1px solid #ccc;
+          border-radius: 6px;
+          padding: 4px 10px;
+        }
+
+        #tabla-productos {
+            height: 100%;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        /* When JS toggles 'hidden' on these elements they will disappear */
+        .celda_ocultable.hidden {
+            display: none !important;
+        }
+
+        .celda_ocultable {
+            display: none;
+        }
+
+        /* small spacing for action icons */
+        .action-icon { cursor: pointer; margin-left:6px; margin-right:6px; vertical-align:middle; }
+
+    </style>
+</head>
+<body class="p-3">
+
+<table border="0">
+    <tr>
+        <td width="100%">{{ context.APP_DEVICE }} - {{ context.PRODUCTOS_INVENTARIO }} productos en inventario ({{context.MOD_INVENTARIO}})</td>
+        <td align="right" nowrap="nowrap"> <a href="/ventas/ventasHoy.html" target="_ventasHoy">Ver ventas de hoy</a> </td>
+    </tr>
+</table>
+
+<button id="btn-escanear" class="btn btn-primary" style="display:none;">Escanear productos</button>
+<button id="toggleBtn" class="btn btn-primary" style="display:none;">back</button> 
+
+
+<div id="estado" style="display:none;">Estado: Inactivo</div>
+<div id="mensaje"></div>
+
+<div id="scanner" style="display:none;"></div>
+
+<table style="border:2px; overflow-y: auto;" width="100%" height="100%">
+    <tr>
+        <!-- LEFT: replaced with Mostrar/Ocultar columnas button -->
+        <td align="left">
+            <button id="btn-toggle-columnas" class="btn btn-secondary" style="display:none;">
+                Mostrar/Ocultar columnas
+            </button>
+        </td>
+
+        <!-- CENTER: replaced with Eliminar venta button -->
+        <td align="center">
+            <button id="btn-eliminar-venta" class="btn btn-danger" style="display:none;">
+                Eliminar venta
+            </button>
+        </td>
+
+        <!-- RIGHT: keep Guardar venta -->
+        <td align="right"><button id="btn-guardar" class="btn btn-success" style="display: none;">Guardar venta</button></td>
+    </tr>
+</table>
+
+<table class="table table-striped" id="tabla-productos" width="100%" height="100%">
+    <thead id="tfoot">
+    <!-- mark total row so it hides with the other celda_ocultable columns -->
+    <tr id="total-row">
+        <th class="celda_ocultable" colspan="10"></th>
+        <th class="text-end celda_ocultable" style="background-color: yellow;">Total:</th>
+        <th id="total" class="celda_ocultable" style="background-color: yellow; font-size: 25px;">0.00</th>
+    </tr>
+    </thead>
+    <thead id="thead">
+    <tr>
+        <th></th>
+        <th>Código</th>
+        <th width="100%">Producto</th>
+        <th></th>
+        <th>Cantidad</th>
+        <th></th>
+        <th></th>
+        <th class="celda_ocultable">Sistema</th>
+        <th class="celda_ocultable">Venta</th>
+        <th class="celda_ocultable"></th>
+        <th class="celda_ocultable"></th>
+        <th class="celda_ocultable">Subtotal</th>
+    </tr>
+    </thead>
+    <tbody></tbody>
+</table>
+
+<div id="debug" style="display:none;position:fixed;bottom:0;left:0;width:100%;height:150px;background:#222;color:#0f0;overflow:auto;font-family:monospace;font-size:12px;"></div>
+
+<script>
+  const context= {{ context | tojson }};
+  console.log("context: "+context);
+  console.log("context APP_DEVICE: "+context.APP_DEVICE);
+</script>
+
+<!-- main.js will be updated next to add handlers for:
+     - toggleColumnsBtn (show/hide celda_ocultable + total-row)
+     - btn-eliminar (clear products)
+     - row action icons (cantidad up/down, price +/- , borrar)
+     - show/hide the three control buttons when products exist
+-->
+<script type="module" src="{{ url_for('static', filename='js/main.js') }}" defer></script>
+</body>
+</html>
