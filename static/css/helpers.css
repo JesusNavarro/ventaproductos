@@ -1,0 +1,114 @@
+table.zebra tr:nth-child(even) {
+    background-color:rgb(221, 229, 234);
+}
+
+table.zebra tr:nth-child(odd) {
+    background-color: white; 
+}
+
+table.no-border-table,
+table.no-border-table td,
+table.no-border-table th {
+  border: 0;
+}
+/* 
+.zebra > tbody > tr:nth-child(even) {
+  background-color: rgb(221, 229, 234);
+}
+
+.zebra > tbody > tr:nth-child(odd) {
+  background-color: white;
+}
+
+.zebra table.zebra > tbody > tr:nth-child(even) {
+  background-color: rgb(221, 229, 234);
+}
+
+.zebra table.zebra > tbody > tr:nth-child(odd) {
+  background-color: white;
+} */
+
+body {
+    overscroll-behavior-y: contain;
+}
+html, body {
+    overscroll-behavior-x: none;
+    overscroll-behavior: none;
+}
+#ticket {
+    width: 60mm;                 /* REAL printable width */
+    margin: 0;
+    padding: 2mm;                /* visual spacing */
+    box-sizing: border-box;
+    background: white;
+    border: none;
+    text-transform: uppercase;
+    color: black;
+    display: inline-block;
+}
+.ticket-inner {
+  font-family: "Roboto Mono", monospace;
+  font-size: 11px;
+  white-space: pre;
+  margin: 4px 0;
+  color: black;
+}
+
+/* ===== MODAL OVERLAY ===== */
+.ticketModal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 9999;
+  justify-content: center;
+  display: flex;
+  align-items: flex-start;   /* top-aligned   padding-top: 10px;*/
+  padding-bottom: 20px;
+}
+
+.ticketModal-content {
+  background: #eee;
+  margin: 40px auto;
+  padding: 10px;
+  width: fit-content;
+  max-width: 90vw;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;         
+  border-radius: 6px;
+  overflow: visible;   /* IMPORTANT */
+  max-width: none;     /* IMPORTANT */
+  /*  max-height: none;    IMPORTANT */
+  max-height: 90vh;
+}
+
+/* ===== MODAL CONTROLS ===== */
+.ticketModal-controls {
+  text-align: center;
+  margin-bottom: 8px;
+  flex: 0 0 auto;
+  padding: 8px;
+  background: #eee;
+  border-bottom: 1px solid #ccc;
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+}
+
+.ticketModal-controls button {
+  margin: 3px;
+}
+
+.ticketPreviewWrapper {
+  display: flex;
+  justify-content: center;
+}
+
+/* scrolling area */
+.ticketModal-body {
+  flex: 1 1 auto;
+  overflow-y: auto;          /* SCROLL HERE */
+  padding: 12px;
+}

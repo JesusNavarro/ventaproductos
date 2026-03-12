@@ -17,6 +17,7 @@ echo "">"$LOG_FILE"
 
 sleep 3
 
+#chmod -R 777 ~/storage/shared/SyncFolder/ventaproductos
 logmsg "----- $(date) Starting Flask -----" "$LOG_FILE"
 
 #nohup python "$APP_PATH/app.py" 2>&1 | tee -a "$LOG_FILE"
@@ -52,6 +53,3 @@ am start \
 
 
 exit 0
-
-
-0x10200000

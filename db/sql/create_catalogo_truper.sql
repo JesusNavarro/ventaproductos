@@ -1,0 +1,28 @@
+
+create table catalogo_truper (
+	codigo	VARCHAR(10) NOT NULL,
+	clave   VARCHAR(25) NOT NULL, 
+	descripcion VARCHAR(255) NOT NULL,
+	unidad VARCHAR(20) NOT NULL,
+	precioDistribuidorConIva DECIMAL(10,2) NOT NULL,
+	precioPublicoConIva DECIMAL(10,2) NULL,
+	descripcionFamilia VARCHAR(255) NOT NULL,
+	pesoKg DECIMAL(10,3) NOT NULL,
+	codigoBarras VARCHAR(25) NULL,
+	barrasVerificada BOOLEAN NOT NULL,
+	imagenVerificada BOOLEAN NOT NULL,
+	unidadInv VARCHAR(5) NOT NULL,
+	numeroKgs DECIMAL(10,2) NULL,
+	numeroUnidades DECIMAL(10,2) NULL,
+	descripcionInv VARCHAR(255) NOT NULL,
+	costoUnidad DECIMAL(10,3) NULL,
+	costoPaquete DECIMAL(10,3) NULL,
+	costoKg DECIMAL(10,3) NULL,
+	sugeridoUnidad DECIMAL(10,3) NULL,
+	sugeridoPaquete DECIMAL(10,3) NULL,
+	sugeridoKg DECIMAL(10,3) NULL,
+	activo boolean,
+	createdDate DATETIME not null,
+	modifiedDate DATETIME default current_timestamp,
+	PRIMARY KEY (codigo, activo)
+);

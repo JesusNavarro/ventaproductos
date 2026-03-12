@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pendientes</title>
+<style>
+  body { font-family: Arial, sans-serif; }
+  html, body {
+        touch-action: manipulation;
+        background-color: #F7F7F7;
+  }
+  h2 { margin-top: 30px; border-bottom: 2px solid #ccc; padding-bottom: 5px; color: #333; }
+  #tablaDetalles { border-collapse: collapse; width: 100%; margin-bottom: 20px; table-layout: auto; }
+  #tablaDetalles th, td {
+    border: 1px solid #ccc;
+    padding: 6px 8px; 
+    text-align: left; 
+    font-size: 14px; 
+    word-wrap: break-word;
+    white-space: nowrap;
+    width: 1%; 
+  }
+  #tablaDetalles th { background: #f0f0f0; } 
+  #tablaDetalles tr:nth-child(even) { background: #f3f1f1; }
+  .venta-header { background: #ddd; font-weight: bold; text-align: left; }
+  .red { color: red; }
+  .warning { color: #c00; font-weight: bold; margin-bottom: 10px; }
+  #headerTable th, #headerTable td { border: 1px solid #aaa; text-align: center; }
+  #headerTable th { background: #e0e0e0; }
+  .selected { background-color: #a1e2b4 !important; }
+  /* .controls {
+    text-align: center;
+    margin-bottom: 15px;
+    { background-color: #a1e2b4 !important; }
+  } */
+  button.menu {
+    padding: 8px 14px;
+    border-radius: 6px;
+    border: none;
+    background: #1b4d8a;
+    color: white;
+    cursor: pointer;
+    margin: 5px;
+  }
+  button:hover { background: #2c63b3; }
+  #tablaDetalles thead th {
+    position: sticky;
+    top: 0;
+    background: #d0ebff;
+    z-index: 2;
+  }
+  #tablaDetalles .blanktd {
+    background: white !important;
+    border-left-style: none; 
+    border-right-style: none;
+  }
+  /* style for headers of the details table */
+  #tablaDetalles .det_descripcion {
+    width: auto;
+    white-space: normal;
+  }
+  .blankTable { border: none !important; border-collapse: collapse; border-style: none;}
+  .blankTable tr th td { border: none !important; 
+  margin: 0;
+  padding: 0; 
+  border-style: none;
+  }
+  #verResumen {
+    background-color: transparent;
+    border: none;
+    width: 25px;
+    height: 25px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+<div id="mensajeRegistro"></div>
+<table class="blankTable" style="table-layout: auto; border-collapse: collapse; width: 100%;">
+<tr>
+    <td rowspan="2" style="vertical-align: top;">
+        <table style="width: max-content;" class="blankTable">
+            <thead>
+                <tr>
+                    <th colspan="2">Dispositivos</th>
+                </tr>
+                </thead>
+                <tbody id="listaEsclavos">
+                </tbody>
+        </table>
+    </td>
+    <td style="vertical-align: top;">
+        <b>Paso 1: </b><button id="getVentasEsclavo" class="menu">Descargar</button><br/>Dispositivos desbloqueados y la aplicacion corriendo
+        
+    </td>
+    <td style="vertical-align: top;" rowspan="2">
+        <b>Paso 3:</b><button id="registrarVentasPendientes" class="menu">Registrar</button><br/>
+        <ul><li>Afecta inventario con las ventas pendientes</li>
+            <li>Envia inventario actualizado a otros dispositivos</li>
+            <li>Afecta inventario en otros dispositivos</li>
+            <li>Elimina ventas de la lista de pendientes</li>
+        </ul>
+    </td>
+    <td id= "resultados" rowspan="2" style="vertical-align: top; width: 100%;"></td>
+</tr>
+<tr>
+    <td style="vertical-align: top;">
+        <div style="display: flex;"><b>Paso 2: </b>
+            <button id="verVentasPendientes" class="menu">Revisar</button>
+            <div id="divVerResumen" style="padding-left: 50px;"></div>
+        </div>
+        Modificar inventario y productos como se necesite
+    </td>
+</tr>
+</table>
+<div id="ventasDisplay"></div>
+<br/>
+<table id="headerTable" style="display: none;">
+  <thead>
+    <tr>
+      <th>Fecha</th>
+      <th>Total Ventas</th>
+      <th>Importe Total</th>
+    </tr>
+  </thead>
+  <tbody id="headerBody"></tbody>
+</table>
+<div id="output"></div>
+<script>
+const configDev = {{ configDev | tojson }};
+const thisIP = {{ thisIP | tojson}};
+//console.log(JSON.stringify(configDev));
+</script>
+<script src="{{ url_for('static', filename='js/helpers.js') }}" defer></script>
+<script>
+
+if (thisIP!=configDev["MS_SOY"]["direccionIP"]){
+    mensajeRegistro = document.getElementById("mensajeRegistro");
+    mensajeRegistro.style.color = "red";
+    mensajeRegistro.innerHTML = '<b>Ventas, inventario, etc. funciona bien, solo no se puede pasar ventas de un dispositivo a otro</b>';
+    mensajeRegistro.innerHTML += `<br/>La direccion IP de este dispositivo cambio a ${thisIP}`;
+    mensajeRegistro.innerHTML += '<br/>Ir a la seccion de AJUSTES y actualizar en ambos dispositivos para que puedan comunicarse';
+    mensajeRegistro.innerHTML += '<br/>Y reiniciar la aplicacion en cada uno de ellos<br/><br/>';
+} else {
+    const getVentasEsclavoBtn = document.getElementById("getVentasEsclavo");
+    const verVentasPendientesBtn = document.getElementById("verVentasPendientes");
+    const registrarVentasPendientesBtn = document.getElementById("registrarVentasPendientes");
+    const ventasDisplay = document.getElementById("ventasDisplay");
+    const resultados = document.getElementById("resultados");
+    const output = document.getElementById("output");
+    const headerBody = document.getElementById("headerBody");
+    const headerTable = document.getElementById("headerTable");
+    const divVerResumen = document.getElementById("divVerResumen");
+    const btnVerResumen = document.createElement("button");
+    btnVerResumen.id="btnVerResumen";
+    btnVerResumen.classList.add("menu");
+    btnVerResumen.textContent='Filtrar productos';
+
+    // const img = document.createElement("img");
+    // img.src = "/static/imagenes/eye.png";
+    // img.style.width = "25px";
+    // img.style.height = "25px";
+    // img.style.display = "block";
+    // btnVerResumen.appendChild(img);
+    btnVerResumen.addEventListener("click", function(){
+        if (!btnVerResumen.classList.contains('selected')){
+            showAllProducts('#outputTbody', false);
+            let prodsFound = document.querySelectorAll(`#output tr`);
+            const checkboxes = Array.from(prodsFound)
+                .flatMap(tr => Array.from(tr.querySelectorAll('input[type="checkbox"]')));
+            checkboxes.forEach(cb => {
+                cb.checked=false;
+            });
+            showOnlyFirstProductoRows('#outputTbody', 'tr[data-producto-id]');
+            btnVerResumen.classList.add('selected');
+        } else {
+            showAllProducts('#output', true);
+            let prodsFound = document.querySelectorAll(`#output tr`);
+            const checkboxes = Array.from(prodsFound)
+                .flatMap(tr => Array.from(tr.querySelectorAll('input[type="checkbox"]')));
+            checkboxes.forEach(cb => {
+                cb.checked=false;
+            });
+            btnVerResumen.classList.remove('selected');
+        }
+    });
+
+    const listaEsclavos = document.getElementById("listaEsclavos");
+    for (c of configDev["MS_ESCLAVOS"]){
+        console.log(c);
+        let tr = document.createElement("tr");
+        let td = document.createElement("td");
+        td.textContent = c["nombre"];
+        tr.appendChild(td);
+        td = document.createElement("td");
+        let chb = document.createElement("input");
+        chb.setAttribute("type", "checkbox");
+        chb.setAttribute("name", "direccionesIP");
+        chb.setAttribute("data-nombre", c["nombre"]);
+        chb.value = c["dispositivoId"];
+        chb.checked = true;
+        td.appendChild(chb);
+        tr.appendChild(td)
+        listaEsclavos.appendChild(tr);
+    };
+
+    getVentasEsclavoBtn.addEventListener("click", async function() {
+        getVentasEsclavo();
+    });
+
+    registrarVentasPendientesBtn.addEventListener("click", async function() {
+        if (output.innerHTML==''){
+            centerMessage('No hay ventas revisadas para registrar');
+        } else {
+            centerMessage('Registrando ventas pendientes');
+            registrarVentasPendientes();
+        }
+    });
+
+    async function getVentasEsclavo() {
+        let selectedCh = document.querySelectorAll("[name=direccionesIP]:checked");
+        if (selectedCh && selectedCh.length>0){
+            for (ch of selectedCh){
+                //centerMessage("Borrando ventas de "+ch.dataset.nombre, true);
+                //let res = await myfetch("/ventas/pendientes/borrar", ch["value"]);
+                //centerMessage("Borrando ventas de "+ch.dataset.nombre, false);
+                //centerMessage("Ventas de "+ch.dataset.nombre+" borradas");
+                centerMessage("Descargando ventas de "+ch.dataset.nombre, true);
+                res = await myfetch("/pull/ventas/esclavo", ch["value"]);
+                //console.log(res.resultado);
+                centerMessage("Descargando ventas de "+ch.dataset.nombre, false);
+                if (res && res.success) {
+                    if (res.resultado.length>0){
+                        centerMessage("Ventas descargadas de "+ch.dataset.nombre, 2);
+                    } else {
+                        centerMessage("No hay ventas pendientes en "+ch.dataset.nombre, 2);
+                    }
+                    //console.log(res.resultado);
+                } else {
+                    centerMessage("No se pudo descargar las ventas de "+ch.dataset.nombre+"<br/>" + res.error, 5);
+                }
+            }
+        } else {
+            centerMessage("No hay dispositivos seleccionados");
+        }
+    }
+
+    async function registrarVentasPendientes() {
+        let selectedCh = document.querySelectorAll("[name=direccionesIP]:checked");
+        //console.log(selectedCh);
+        if (selectedCh && selectedCh.length>0){
+            for (ch of selectedCh){
+                let startDatetime = new Date();
+                console.log("/ventas/pendientes/registrar Start:", startDatetime.toISOString());
+                res = await myfetch("/ventas/pendientes/registrar", ch["value"]);
+                let endDatetime = new Date();
+                console.log("/ventas/pendientes/registrar End:", endDatetime.toISOString());
+                console.log("/ventas/pendientes/registrar Difference:", endDatetime-startDatetime, "ms");
+                if (res.success){
+                    let message ="✅ Ventas para "+ch.dataset.nombre+" registradas en inventario";
+                    resultados.innerHTML=message;
+                    //centerMessage(message);
+                } else {
+                    let message = "❌ Ventas para "+ch.dataset.nombre+" NO registradas en inventario";
+                    resultados.innerHTML=message;
+                    //centerMessage(message);
+                    return;
+                }
+                //return;
+                centerMessage("Enviando inventario a "+ch.dataset.nombre, true);
+                //res = await myfetch("/push/db/maestro", ch["value"]);
+                startDatetime = new Date();
+                console.log("/command/pull/maestro Start:", startDatetime.toISOString());
+                res = await myfetch("/command/pull/maestro", ch["value"], 300000);
+                endDatetime = new Date();
+                console.log("/command/pull/maestro End:", endDatetime.toISOString());
+                console.log("/command/pull/maestro Difference:", endDatetime-startDatetime, "ms");
+                centerMessage("Enviando inventario a "+ch.dataset.nombre, false);
+                if (res.success){
+                    let message = "<br/>✅ Inventario recibido por "+ch.dataset.nombre;
+                    resultados.innerHTML+=message;
+                    centerMessage(message);
+                } else {
+                    let message ="<br/>❌ Inventario NO recibido por "+ch.dataset.nombre;
+                    resultados.innerHTML+=message;
+                    centerMessage(message);
+                    return;
+                }
+                startDatetime = new Date();
+                console.log("/push/pendientes/registrar Start:", startDatetime.toISOString());
+                res = await myfetch("/push/pendientes/registrar", ch["value"]);
+                endDatetime = new Date();
+                console.log("/push/pendientes/registrar End:", endDatetime.toISOString());
+                console.log("/push/pendientes/registrar Difference:", endDatetime-startDatetime, "ms");
+                if (res.success){
+                    let message = "<br/>✅ Ventas pendientes actualizadas en "+ch.dataset.nombre;
+                    resultados.innerHTML+=message;
+                    centerMessage(message);
+                } else {
+                    let message = "<br/>❌ Ventas pendientes NO actualizadas en "+ch.dataset.nombre;
+                    resultados.innerHTML+=message;
+                    centerMessage(message);
+                    return;
+                }
+                //return;
+                startDatetime = new Date();
+                console.log("/ventas/pendientes/borrar Start:", startDatetime.toISOString());
+                res = await myfetch("/ventas/pendientes/borrar", ch["value"]);
+                endDatetime = new Date();
+                console.log("/ventas/pendientes/borrar End:", endDatetime.toISOString());
+                console.log("/ventas/pendientes/borrar Difference:", endDatetime-startDatetime, "ms");
+                if (res.success){
+                    let message = "<br/>✅ Ventas pendientes borradas para "+ch.dataset.nombre;
+                    resultados.innerHTML+=message;
+                    centerMessage(message);
+                    message = "<br/>✅ COMPLETADO";
+                    resultados.innerHTML+=message;
+                } else {
+                    let message = "<br/>❌ Ventas pendientes NO borradas para "+ch.dataset.nombre;
+                    resultados.innerHTML+=message;
+                    centerMessage(message);
+                    return;
+                }
+            }
+        } else {
+            centerMessage("No hay dispositivos seleccionados");
+        }
+    }
+
+    verVentasPendientesBtn.addEventListener("click", async function() {
+        let res = await myfetch("/ventas/pendientes/sel");
+        divVerResumen.innerHTML='';
+        divVerResumen.replaceChildren();
+        if (res.success) {
+            if (res.resultado.length>0){
+                fechas_ventas = {};
+                res.resultado.forEach(ele => {
+                    fechaVenta = ele["fechaVenta"].substring(0, 10);
+                    if (!(fechaVenta in fechas_ventas)) {
+                        fechas_ventas[fechaVenta] = [];
+                    }
+                    fechas_ventas[fechaVenta].push(ele);
+                });
+                const archivos = [];
+                for (const [key, value] of Object.entries(fechas_ventas)) {
+                    const {
+                        tablaDetalles,
+                        resumen
+                    } = procesarContenido(key, value);
+                    archivos.push({
+                        tablaDetalles,
+                        resumen,
+                        nombre: key,
+                        fecha: new Date().toISOString().split("T")[0],
+                        cargado: true
+                    });
+                }
+                mostrarArchivos(archivos);
+                divVerResumen.appendChild(btnVerResumen);
+            } else {
+                centerMessage('No hay ventas pendientes en este momento');
+                output.innerHTML='';
+                headerBody.innerHTML = "";
+                headerTable.style.display= 'none';
+                const archivos = [];
+            }
+        } else {
+            centerMessage('No se pudo obtener las ventas pendientes');
+        }
+    });
+
+    function showOnlyFirstProductoRows(tableSelector, filter) {
+        const seen = new Set();
+        document.querySelectorAll(`${tableSelector} ${filter}`)
+            .forEach(tr => {
+                const pid = tr.dataset.productoId;
+                tr.style.display = seen.has(pid) ? 'none' : '';
+                seen.add(pid);
+            });
+    }
+
+    function procesarContenido(fechaVenta, ventasPendientes) {
+        let productos = [];
+        let ventas = [];
+        // "descCantidadAccum", "Cantidad Acumulada",
+        let columnasAMostrar = ["dispositivoId","codigoBarras", "codigoNumerico", "descripcion",  "costo", "descCantidad", "precioVenta",  "subtotal",  "descCantidadAccum", "descExistenciaNueva"]
+        let titulosMostrar = ["Dispositivo", "Barras", "Codigo", "Producto", "Costo", "Cantidad", "Precio",  "Importe",  "Cantidad Acumulada", "Inventario Restante"]
+        const grupos = {};
+
+        for (const v of ventasPendientes) {
+            const clave = v.fechaVenta;
+            if (!grupos[clave]) grupos[clave] = [];
+            grupos[clave].push(v);
+            productos.push(v);
+        }
+        ventas = Object.entries(grupos).map(([clave, productos]) => ({clave, productos}));
+        let totalDia = 0;
+        // Tabla detalles header
+        tablaDetalles = document.createElement("table");
+        tablaDetalles.id = "tablaDetalles";
+        let thead = document.createElement("thead");
+        let tr = document.createElement("tr");
+        tr.setAttribute("class", "dia_fecha");
+        let th = document.createElement("th");
+        th.colSpan = columnasAMostrar.length+1;
+        th.style.textAlign = "left";
+        th.setAttribute("class", "blanktd");
+        th.textContent=fechaVenta;
+        th.style.width = '100%';
+        tr.appendChild(th);
+        thead.appendChild(tr);
+        tr = document.createElement("tr");
+        tr.appendChild(document.createElement("th"));
+        tr.setAttribute("class", "titulos_columnas");
+        titulos = titulosMostrar.map((c,i) => {
+            const lower = columnasAMostrar[i].toLowerCase();
+            th = document.createElement("th");
+            th.setAttribute("class", `det_${lower}`);
+            th.textContent = c;
+            return th;
+        });
+        tr.append(...titulos);
+        thead.appendChild(tr);
+        tablaDetalles.appendChild(thead);
+        tbody = document.createElement("tbody");
+        tbody.id="outputTbody";
+        ventas.slice().reverse().forEach((venta, i) => {
+            const index = ventas.length - i; // reversed index
+            let totalVenta = 0;
+            if (venta.clave != "") { //style="background:#e3fbfc;"
+                const tr = document.createElement("tr");
+                tr.classList.add("venta-header");
+                tr.style.background = "#d0ebff";
+                colspanIndex=2;
+                /* ────────────── TD 1 ────────────── */
+                const td1 = document.createElement("td");
+                td1.colSpan = colspanIndex;
+                td1.classList.add("blanktd");
+                td1.style.borderRightStyle = "none";
+                td1.style.textAlign = "left";
+                td1.style.fontWeight = "normal";
+                const b = document.createElement("b");
+                b.textContent = index;
+                td1.append("(");
+                td1.appendChild(b);
+                td1.append(`) ${venta.clave.substring(11, 19)}`);
+                tr.appendChild(td1);
+                /* ────────────── TD 2 (blank) ────────────── */
+                const td2 = document.createElement("td");
+                td2.classList.add("blanktd");
+                td2.colSpan = columnasAMostrar.length - colspanIndex - 2;
+                tr.appendChild(td2);
+                /* ────────────── TD 3 (totalVenta) ────────────── */
+                const td3 = document.createElement("td");
+                td3.classList.add("blanktd");
+                td3.style.borderLeftStyle = "none";
+                td3.style.textAlign = "right";
+                td3.id = `totalVenta_${index}`;
+                tr.appendChild(td3);
+                /* ────────────── TD 4 (blank) ────────────── */
+                const td4 = document.createElement("td");
+                td4.classList.add("blanktd");
+                tr.appendChild(td4);
+                /* ────────────── APPEND TO TBODY ────────────── */
+                tbody.appendChild(tr);
+            }
+            for (const prod of venta.productos) {
+                // if  (prod["fechaInventario"]){
+                //     continue;
+                // }
+                let subtotal = 0;
+                let muestraBtnInventario = false;
+                const valSubtotal = prod["subtotal"];
+                const valPrecioVenta = prod["precioVenta"];
+                const valCantidad = prod["cantidad"];
+                const valPrecio = prod["precio"];
+                if (valSubtotal !== undefined && !isNaN(valSubtotal) && valSubtotal !== 0) {
+                    subtotal = valSubtotal;
+                } else if (valPrecioVenta !== undefined && valCantidad !== undefined) {
+                    subtotal = valPrecioVenta * valCantidad;
+                } else if (valPrecio !== undefined && valCantidad !== undefined) {
+                    subtotal = valPrecio * valCantidad;
+                }
+                if (parseInt(prod["cancelada"])!=1){
+                    totalVenta += subtotal;
+                }
+                let tr = document.createElement("tr");
+                if (prod["codigoNumerico"]=='46122'){
+                    console.log(JSON.stringify(prod));
+                }
+                if (parseInt(prod["cancelada"])==1){
+                    tr.classList.add(`red`);
+                }
+                let mytd = document.createElement("td");
+                let selCheckTr = document.createElement("input");
+                selCheckTr.setAttribute("type", "checkbox");
+                selCheckTr.addEventListener("change", function () {
+                    if (!tr || tr.classList.contains("venta-header")) return;
+                    if (!selCheckTr.checked){
+                        if (tr.classList.contains("selected")) {
+                            tr.classList.remove("selected");
+                        }
+                        showAllProducts('#output', true);
+                    } else {
+                        showAllProducts('#output', false);
+                        tr.classList.add("selected");
+                        tr.style.display = '';
+                        prodFounds = document.querySelectorAll(`#output tr[data-producto-id="${tr.dataset.productoId}"]`);
+                        const checkboxes = Array.from(prodFounds)
+                            .flatMap(tr => Array.from(tr.querySelectorAll('input[type="checkbox"]')));
+                        checkboxes.forEach(cb => {
+                            cb.checked=false;
+                        });
+                        selCheckTr.checked = true;
+                        prodFounds.forEach(y => {
+                            y.style.display = '';
+                            previousSiblingWithClass(y, 'venta-header').style.display = '';
+                            fecha = y.parentElement.previousElementSibling.firstElementChild;
+                            fecha.style.display = '';
+                            fecha.nextElementSibling.style.display = '';
+                        });
+                    }
+                    btnVerResumen.classList.remove('selected');
+                });
+                mytd.appendChild(selCheckTr);
+                tr.appendChild(mytd);
+                tr.dataset.productoId = prod["productoId"];
+                tr_innerTds = columnasAMostrar.map(c => {
+                    let mytd = document.createElement("td");
+                    const lower = c.toLowerCase();
+                    mytd.classList.add(`det_${lower}`);
+                    let val = prod[c] || "";
+                    const esDinero = ["precio", "precioventa", "subtotal", "costo"].some(k => c.toLowerCase().includes(k));
+                    const esNumero = ["precio", "precioventa", "subtotal", "cantidad", "costo"].some(k => c.toLowerCase().includes(k));
+                    const rojo = esNumero && val < 0;
+                    //if (rojo)  mytd.classList.add(`red`);
+                    //|| prod["existenciaNuevaUnidades"]<=0
+                    // if (c=="descExistenciaNueva" && (prod["existenciaNuevaUnidades"]<=prod["minimoUnidades"] )){
+                    //     mytd.classList.add(`red`);
+                    //     muestraBtnInventario = true; }
+                        //|| prod["existenciaNuevaPaquetes"]<=0
+                    
+                    if (c=="descExistenciaNueva" && (prod["existenciaNuevaPaquetes"]<=prod["minimoPaquetes"] ) &&
+                        prod["seCompraPor"]=="paquete"){
+                        mytd.classList.add(`red`);
+                        muestraBtnInventario = true; }
+                    //     //|| prod["existenciaNuevaKgs"]<=0
+                    // if (c=="descExistenciaNueva" && (prod["existenciaNuevaKgs"]<=prod["minimoKgs"] )){
+                    //     mytd.classList.add(`red`);
+                    //     muestraBtnInventario = true; }
+                    if (c=="descExistenciaNueva" && prod["fechaInventario"]){
+                        mytd.classList.remove(`red`);
+                    }
+                    if (c=="descExistenciaNueva" || c=="descCantidadAccum" || c=="descCantidad"){
+                        //console.log(val);
+                        const {mainpart, extra} = splitParenTextSimple(val);
+                        //console.log(mainpart);
+                        //console.log(extra);
+                        mytd.setAttribute("title", extra);
+                        mytd.textContent = mainpart;
+                    } else {
+                        mytd.textContent = val;
+                    }
+                    if (c=="dispositivoId"){
+                        for (x of configDev["MS_ESCLAVOS"]){
+                            if (x["dispositivoId"]==val){
+                                val = x["nombre"];
+                                mytd.textContent = val;
+                                break;
+                            }
+                        }
+                    }
+                    if (esDinero) {mytd.textContent = "$"+val;}
+                    if (c=="costo"){
+                        mytd.textContent = "$"+parseSmartNumber(val);
+                    }
+                    if (c=="precio" && prod["precio"]==prod["precioVenta"] ){
+                        mytd.textContent ='';
+                    }
+                    if (!isNaN(Number(val))){ mytd.style.textAlign="right";}
+                    return mytd;
+                });
+                tr.append(...tr_innerTds);
+                // if (muestraBtnInventario){
+                //     let mytd = document.createElement("td");
+                //     let invButton = document.createElement("button");
+                //     invButton.value = "Inventario";
+                //     invButton.addEventListener("click", async function() {
+                //         getVentasEsclavo();
+                //     });
+                //     tr_innerHtml+=`<td>`
+                // }
+                tbody.appendChild(tr);
+            };
+            totalVentaTd = tbody.querySelector(`#totalVenta_${index}`);
+            totalVentaTd.textContent = `$${totalVenta.toFixed(2)}`.replace('.00', '');
+            totalDia += totalVenta;
+        });
+        tablaDetalles.appendChild(tbody);
+        const resumen = {
+            total: totalDia,
+            ventas: ventas.length
+        };
+        return {
+            tablaDetalles,
+            resumen
+        };
+    }
+
+    function splitParenTextSimple(str) {
+        const open = str.indexOf("(");
+        if (open === -1) {
+            return { mainpart: str.trim(), extra: '' };
+        }
+        return {
+            mainpart: str.slice(0, open).trim(),
+            extra: str.slice(open + 1, str.lastIndexOf(")")).trim()
+        };
+    }
+
+    function previousSiblingWithClass(el, className) {
+        let prev = el.previousElementSibling;
+        while (prev) {
+            if (prev.classList.contains(className)) {
+                return prev;
+            }
+            prev = prev.previousElementSibling;
+        }
+        return null;
+    }
+
+    function showAllDays(archivos) {
+        
+        output.innerHTML ='';
+        archivos.forEach((a) => {
+            output.prepend(a.tablaDetalles);
+        });
+        showAllProducts('#output', true);
+    }
+
+    function showAllProducts(targetElement,  show = true) {
+        allTrs = document.body.querySelectorAll(`${targetElement} tr`);
+        allTrs.forEach((a) => {
+            a.style.display = show ? '' : 'none';
+            a.classList.remove("selected");
+        });
+    }
+
+    async function mostrarArchivos(archivos) {
+        output.innerHTML = "";
+        headerBody.innerHTML = "";
+
+        archivos.slice().reverse().forEach((a) => {
+            const row = document.createElement("tr");
+            // <td>${getWeekdaySpanish(a.anio, a.mes, a.dia)}</td>
+            row.innerHTML = `
+            <td>${a.nombre}</td>
+            <td>${a.resumen.ventas}</td>
+            <td>$${a.resumen.total.toFixed(2)}</td>
+            `;
+            row.addEventListener("click", () => {
+                if (row.classList.contains("selected")) {
+                    row.classList.remove("selected");
+                    showAllDays(archivos);
+                } else {
+                    output.innerHTML='';
+                    document.querySelectorAll("#headerBody tr").forEach(tr => tr.classList.remove("selected"));
+                    row.classList.add("selected");
+                    output.append(a.tablaDetalles);
+                    showAllProducts('#output', true);
+                }
+            });
+            headerBody.prepend(row);
+        });
+
+        if (archivos.length>0){
+            headerTable.style.display='';
+        }
+        showAllDays(archivos);
+    }
+}
+</script>
+</body>
+</html>

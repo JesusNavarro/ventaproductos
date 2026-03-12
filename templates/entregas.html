@@ -1,0 +1,915 @@
+<html>
+<meta
+  name="viewport"
+  content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
+/>
+<style>
+html, body {
+    touch-action: manipulation;
+    background-color: #F7F7F7;
+}
+/* Add double border on top of first row */
+table.render-section {
+  border-collapse: collapse;
+  border: 1px solid black;   /* outer border */
+  font-family: Arial, sans-serif;
+}
+
+table.render-section td,
+table.render-section th {
+  border: 1px solid black;
+}
+/* table.render-section .locked {
+  opacity: 1;
+  background-color: #f9f9f9;
+  color: black;
+  cursor: default;
+  box-shadow: inset 0 0 0 1px #d1d5db;
+} */
+table.render-section .locked:focus {
+  /* background-color: rgb(221, 229, 234); */
+  background-color: transparent;
+  color: black;
+  cursor: default;
+  accent-color: black;
+  border: none;
+  font-size: large;
+  pointer-events: none;
+}
+table.render-section .locked {
+  /* background-color: rgb(221, 229, 234); */
+  background-color: transparent;
+  color: black;
+  cursor: default;
+  accent-color: rgb(106, 239, 106);
+  border: none;
+  font-size: large;
+  pointer-events: none;
+}
+table.render-section input {
+    background-color:lightyellow;
+    font-family: Arial, sans-serif;
+    font-size: large;
+}
+table.render-section input:focus {
+    /* background-color:rgb(209, 255, 201); */
+    background-color:yellow;
+    font-weight: bold;
+}
+table.render-section input[type=text] {
+    width: 80px;
+}
+table.render-section input[type=number] {
+    width: 80px;
+    -moz-appearance: textfield;
+}
+table.render-section input[type="number"]::-webkit-outer-spin-button,
+table.render-section input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+/* 
+style="background-color: #ffffb3;" yellow
+style="background-color: #ccffff;" blue
+style="background-color: #ffe6ff;" pink
+
+col.unidad {
+  border-left: 3px solid black;
+}
+
+col.paquete {
+  border-left: 3px solid black;
+}
+
+col.kilo {
+  border-left: 3px solid black;
+} */
+
+.render-section-start td,
+.render-section-start th {
+  border-top: 6px double rgb(9, 153, 215) !important;
+  /* padding-top: 22px; */
+}
+/* Add double border on bottom of last row */
+.render-section-end td,
+.render-section-end th {
+  border-bottom: 6px double rgb(9, 153, 215) !important;
+  /* padding-bottom: 22px; */
+}
+
+.btop {
+     border-top: 3px dotted rgb(19, 9, 215) !important;
+}
+.bbottom {
+     border-bottom: 3px dotted rgb(19, 9, 215) !important;
+}
+.bleft {
+     border-left: 3px dotted rgb(19, 9, 215) !important;
+}
+.bright {
+     border-right: 3px dotted rgb(19, 9, 215) !important;
+}
+
+input.disabled {
+  background-color: Gainsboro !important;
+  color: black !important;
+  border-color: Gainsboro !important;
+  cursor: not-allowed !important;
+  pointer-events: none !important;
+}
+
+
+/* Optional: vertical emphasis */
+/* .render-section td:first-child {
+  border-left: 3px double black;
+}
+.render-section td:last-child {
+  border-right: 3px double black;
+} */
+</style>
+</meta>
+<body>
+  <table width="100%">
+    <tr>
+      <td>Costo Incluye Iva<input type="checkbox" id="costoTieneIva"></td>
+      <td><input type="file" id="entregaInput"></td>
+      <td><input type="button" id="cargaEntrega" value="Cargar archivo" onclick="cargaProductos();">
+      </td>
+    </tr>
+  </table>
+<br/><div id="divMensaje"></div><br/>
+<script>
+
+/* Inicializacion de variables */
+const configDev = {{ configDev | tojson }};
+if (configDev){
+    if (configDev["MS_SOY"]){
+        window.thisRol = configDev["MS_SOY"]["rol"];
+    }
+}
+
+let productTemplate = `
+<tr style="scroll-margin-top: 80px;">
+  <td id="td_hdSecuencia"></td>
+  <td id="td_hdCodigoNumerico"></td>
+  <td id="td_hdDescripcion"></td>
+  <td id="td_hdCosto"></td>
+  <td id="td_hdPrecio"></td>
+  <td id="td_hdLlegaExistencia"></td>
+  <td id="td_hdMensajes"></td>
+  <td id="td_btnExpand"></td>
+</tr>
+<tr id="td_showDetails" style="display:none;">
+<td colspan="8">
+  <div style="background-color:white;">
+    <table style="border-collapse: collapse; width:100%;" class="zebra">
+<tr class="render-section-start">
+    <td id="td_codigoNumerico" style="text-align: center;"><b>Codigo</b></br></td>
+    <td colspan="6" id="td_descripcion" style="color: blue;"></td>
+    <td id="td_claves" colspan="3" style="vertical-align: top;"><b>Claves</b></br></td>
+    <td id="td_imagen" rowspan="12" style="text-align: center; width=100%;" class="render-section-end"></td>
+</tr>
+<tr>
+    <td id="td_codigoBarras"><b>Barras</b><br/></td>
+    <td id="td_proveedorId" colspan="2"><b>Proveedor</b><br/></td>
+    <td id="td_seCompraPor"><b>Compra por</b><br/></td>
+    <td id="td_numeroUnidades" colspan="3"></td>
+    <td id="td_numeroKgs" colspan="2"></td>
+    <td id="td_activo"></td>
+</tr>
+<tr>
+    <th>Venta Preferida</th>
+    <th colspan="3" class="bleft btop bright" id="td_titleUnidad"></th>
+    <th colspan="3" class="bleft btop bright" id="td_titlePaquete"></th>
+    <th colspan="3" class="bleft btop bright">Kilo</th>
+</tr>
+<tr>
+    <td id="td_preferenciaVenta"></td>
+    <td colspan="3" id="td_muestraUnidad" class="bleft bright"></td>
+    <td colspan="3" id="td_muestraPaquete" class="bleft bright"></td>
+    <td colspan="3" id="td_muestraKg" class="bleft bright"></td>
+</tr>
+<tr>
+    <th></th>
+    <th class="bleft" style="background-color: #ffffb3;">Hay</th>
+    <th style="background-color: #ccffff;">Entrega</th>
+    <th class="bright" style="background-color: #ffe6ff;">Nuevo</th>
+    <th class="bleft" style="background-color: #ffffb3;">Hay</th>
+    <th style="background-color: #ccffff;">Entrega</th>
+    <th class="bright" style="background-color: #ffe6ff;">Nuevo</th>
+    <th class="bleft" style="background-color: #ffffb3;">Hay</th>
+    <th style="background-color: #ccffff;">Entrega</th>
+    <th class="bright" style="background-color: #ffe6ff;">Nuevo</th>
+</tr>
+<tr>
+    <th>Costo Sin Iva</th>
+    <td id="td_costoSinIvaUnidad"  class="bleft"></td>
+    <td id="td_llegaCostoSinIvaUnidad"></td>
+    <td id="td_nuevoCostoSinIvaUnidad" class="bright"></td>
+    <td id="td_costoSinIvaPaquete" class="bleft"></td>
+    <td id="td_llegaCostoSinIvaPaquete"></td>
+    <td id="td_nuevoCostoSinIvaPaquete" class="bright"></td>
+    <td id="td_costoSinIvaKg" class="bleft"></td>
+    <td id="td_llegaCostoSinIvaKg"></td>
+    <td id="td_nuevoCostoSinIvaKg" class="bright"></td>
+</tr>
+<tr>
+    <th>Iva</th>
+    <td id="td_ivaUnidad"  class="bleft"></td>
+    <td id="td_llegaIvaUnidad"></td>
+    <td id="td_nuevoIvaUnidad" class="bright"></td>
+    <td id="td_ivaPaquete"  class="bleft"></td>
+    <td id="td_llegaIvaPaquete"></td>
+    <td id="td_nuevoIvaPaquete" class="bright"></td>
+    <td id="td_ivaKg"  class="bleft"></td>
+    <td id="td_llegaIvaKg"></td>
+    <td id="td_nuevoIvaKg" class="bright"></td>
+</tr>
+<tr>
+    <th>Costo</th>
+    <td id="td_costoUnidad"  class="bleft"></td>
+    <td id="td_llegaCostoUnidad" ></td>
+    <td id="td_nuevoCostoUnidad" class="bright"></td>
+    <td id="td_costoPaquete"  class="bleft"></td>
+    <td id="td_llegaCostoPaquete"></td>
+    <td id="td_nuevoCostoPaquete" class="bright"></td>
+    <td id="td_costoKg"  class="bleft"></td>
+    <td id="td_llegaCostoKg"></td>
+    <td id="td_nuevoCostoKg" class="bright"></td>
+</tr>
+<tr>
+    <th>Precio</th>
+    <td id="td_precioUnidad"  class="bleft"></td>
+    <td id="td_llegaPrecioUnidad"></td>
+    <td id="td_nuevoPrecioUnidad" class="bright"></td>
+    <td id="td_precioPaquete"  class="bleft"></td>
+    <td id="td_llegaPrecioPaquete"></td>
+    <td id="td_nuevoPrecioPaquete" class="bright"></td>
+    <td id="td_precioKg"  class="bleft"></td>
+    <td id="td_llegaPrecioKg"></td>
+    <td id="td_nuevoPrecioKg" class="bright"></td>
+</tr>
+<tr>
+    <th>Ganancia</th>
+    <td id="td_gananciaUnidad"  class="bleft"></td>
+    <td id="td_llegaGananciaUnidad"></td>
+    <td id="td_nuevoGananciaUnidad" class="bright"></td>
+    <td id="td_gananciaPaquete"  class="bleft"></td>
+    <td id="td_llegaGananciaPaquete"></td>
+    <td id="td_nuevoGananciaPaquete" class="bright"></td>
+    <td id="td_gananciaKg"  class="bleft"></td>
+    <td id="td_llegaGananciaKg"></td>
+    <td id="td_nuevoGananciaKg" class="bright"></td>
+</tr>
+<tr>
+    <th>Cantidad</th>
+    <td id="td_existenciaUnidades" class="bleft"></td>
+    <td id="td_llegaExistenciaUnidades"></td>
+    <td id="td_nuevoExistenciaUnidades" class="bright"></td>
+    <td id="td_existenciaPaquetes" class="bleft"></td>
+    <td id="td_llegaExistenciaPaquetes"></td>
+    <td id="td_nuevoExistenciaPaquetes" class="bright"></td>
+    <td id="td_existenciaKgs" class="bleft"></td>
+    <td id="td_llegaExistenciaKgs"></td>
+    <td id="td_nuevoExistenciaKgs" class="bright"></td>
+</tr>
+<tr class="render-section-end">
+  <th>Minimo</th>
+  <td colspan="2" class="bleft"></td>
+  <td id="td_minimoUnidades" class="bright"></td>
+  <td colspan="2" class="bleft"></td>
+  <td id="td_minimoPaquetes" class="bright"></td>
+  <td colspan="2" class="bleft"></td>
+  <td id="td_minimoKgs" class="bright"></td>
+</tr>
+</table>
+<br/><br/>
+</div>
+</td>
+    </tr>
+<tr style="display:none;" id="td_bottomTr">
+<td colspan="8"></td></tr>
+`;
+
+</script>
+<script src="{{ url_for('static', filename='js/helpers.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/producTabla.js') }}" defer></script>
+<script>
+
+let productosEntrega;
+let proveedores = [];
+
+document.addEventListener("DOMContentLoaded", async () => {
+
+  loadIVA();
+
+  let provRes = await myfetch("/proveedor/getAll");
+  if (provRes.success) {
+      console.log("proveedores");
+      console.log(JSON.stringify(provRes));
+      provRes.resultado.forEach(prov => {
+        let provOpt = [];
+        provOpt.push(prov.proveedorId);
+        provOpt.push(prov.proveedor);
+        proveedores.push(provOpt);
+      });
+  }
+
+
+    columnas = [
+      {"key":"bottomTr"},
+      {"key":"imagen", format: (value, obj, td, col, idxSection) => {
+          if (!obj["codigoNumerico"]) return "";
+          const img = document.createElement("img");
+          img.src = `/static/imagenes/truper/truper_${obj["codigoNumerico"]}.jpg`;
+          // img.style.width = "550px";
+          // img.style.height = "550px";
+          img.alt = "Sin imagen";
+          //img.style.border="3px";
+          img.style.width = "100%";
+          img.style.height = "100%";
+          img.style.objectFit = "contain"; // or "cover"
+          // If image doesn't exist → remove it
+          img.onerror = function () {
+            //img.remove();
+            img.style.display = "none";
+          };
+          return img; // ✅ Return immediately (NOT async)
+        }
+      },
+      {"key":"showDetails"},
+      {"key":"hdSecuencia", format: (value, obj, td, col, idxSection) => {
+              return idxSection;
+          }
+      },
+      {"key":"hdCodigoNumerico", format: (value, obj, td, col, idxSection) => {
+              return obj["codigoNumerico"]??"";
+          }
+      },
+      {"key":"hdDescripcion", format: (value, obj, td, col, idxSection) => {
+              return obj["descripcion"]??"";
+          }
+      },
+      {"key":"hdCosto", "control":["span"]},
+      {"key":"hdPrecio", "control":["span"]},
+      {"key":"hdLlegaExistencia", "control":["span"]},
+      {"key":"hdMensajes", "control":["span"]},
+      {"key":"btnExpand", "control":["button", "Ver"],
+        "listeners": [{"click": function({obj, col, input, event, sectionKey}){
+          let detalles = getPTCelda(sectionKey, "showDetails");
+          if (detalles.style.display=="none"){
+            detalles.style.display="";
+            input.innerText="Ocultar";
+            // let lastRow = getPTCelda(sectionKey, "bottomTr");
+            // console.log(JSON.stringify(lastRow));
+            // lastRow.style.display = "";
+            input.closest("tr").scrollIntoView({
+              behavior: "smooth"
+            });
+            // lastRow.style.display = "none";
+            // lastRow.focus();
+          } else {
+            detalles.style.display="none";
+            input.innerText="Ver";
+          }
+        }}],
+        postCreate: ({ obj, input }) => {
+            if (!obj["codigoNumerico"] && obj["codigoEntrega"]) {
+              const newBtn = input.cloneNode(true);
+              input.replaceWith(newBtn);
+              newBtn.innerText = "Nuevo";
+              newBtn.style.backgroundColor = "lightgreen";
+              newBtn.onclick = (e) => {
+                openInWorkspace("/producto", obj["codigoEntrega"], false);
+              };
+            }
+          }
+      },
+      {"key": "titleUnidad", format: (value, obj, td, col, idxSection) => {
+              if (obj["seCompraPor"]=="unidad")
+              //td.style.backgroundColor="#ccffff";
+              td.style.backgroundColor="lightgreen";
+              return "Unidad - "+obj["unidadInv"];
+          }
+      },
+      {"key": "titlePaquete", format: (value, obj, td, col, idxSection) => {
+              if (obj["seCompraPor"]=="paquete")
+              //td.style.backgroundColor="#ffe6ff";
+              td.style.backgroundColor="lightgreen";
+              return "Paquete";
+          }
+      },
+      {"key": "codigoNumerico", "control":["span"]},
+      {"key": "descripcion"},
+      {"key": "codigoBarras", "control":["span"]},
+      {"key": "proveedorId", "control":["select", proveedores], "ctrlclass": ["locked"]},
+      {"key": "seCompraPor", "control":["span"]},
+      {"key": "numeroUnidades", format: (value, obj, td, col, idxSection) => {  
+        let texto = "";
+        if (obj["seCompraPor"]=="paquete" && obj["numeroUnidades"]>0){
+          texto = obj["numeroUnidades"]+" "+obj["unidadInv"]+(obj["numeroUnidades"]==1?"":"s");
+          }
+          return texto;
+        }
+      },
+      {"key": "unidadInv"},
+      {"key": "numeroKgs", format: (value, obj, td, col, idxSection) => {  
+        let texto = "";
+        if (obj["seCompraPor"]=="paquete" && obj["numeroKgs"]>0){
+          texto = obj["numeroKgs"]+" kilo"+(obj["numeroKgs"]==1?"":"s");
+          }
+          return texto;
+        }
+      },
+      {"key": "activo", "control": ["checkbox"], "ctrlclass": ["locked"]},
+      {"key": "claves", "control":["span"]},
+      {"key": "preferenciaVenta", "title": "Preferencia", 
+          "control" : ["select", 
+              [["-1","Pieza"], ["-2", "Paquete"], ["-3", "Kilo"]]
+          ],
+          "ctrlclass" : ["locked"]
+      },
+      {"key": "muestraUnidad", "title": "A la venta", "control": ["checkbox"], "ctrlclass": ["locked"],
+        "listeners": [changeMuestra("unidad")]
+      },
+      {"key": "muestraPaquete", "title": "A la venta", "control": ["checkbox"], "ctrlclass": ["locked"],
+        "listeners": [changeMuestra("paquete")]
+      },
+      {"key": "muestraKg", "title": "A la venta", "control": ["checkbox"], "ctrlclass": ["locked"],
+      "listeners": [changeMuestra("kg")]
+      },
+
+      {"key": "costoSinIvaUnidad", "control": ["number"], "ctrlclass": ["unidad", "locked"],
+        "listeners": [{"change": function({obj, col, input, event, sectionKey}){
+          costoSinIvaChange(obj, sectionKey, "", "unidad");
+          modGanancia(sectionKey, "", "unidad");
+        }}]
+        },
+      {"key": "ivaUnidad", "control": ["number"], "ctrlclass": ["locked", "unidad"] },
+      {"key": "costoUnidad", "control": ["number"], "ctrlclass": ["unidad", "locked"],
+          "listeners": [{"change": function({obj, col, input, event, sectionKey}){
+          costoChange(obj, sectionKey, "", "unidad");
+          modGanancia(sectionKey, "", "unidad");
+        }}]
+        },
+      {"key": "precioUnidad", "control": ["number"], "ctrlclass": ["unidad", "locked"],
+        "listeners": [{"change": function({obj, col, input, event, sectionKey}){
+          modGanancia(sectionKey, "", "unidad");
+        }}]
+        },
+      {"key": "gananciaUnidad", "control": ["text"], "ctrlclass": ["unidad", "locked"] },
+      {"key": "existenciaUnidades", "control": ["number"], "ctrlclass": ["unidad", "locked"] },
+
+      {"key": "llegaCostoSinIvaUnidad", "control": ["number"], "ctrlclass": ["unidad", "locked"],
+        "listeners": [{"change": function({obj, col, input, event, sectionKey}){
+          costoSinIvaChange(obj, sectionKey, "llega", "unidad");
+          modGanancia(sectionKey, "llega", "unidad");
+        }}]
+        },
+      {"key": "llegaIvaUnidad", "control": ["number"], "ctrlclass": ["unidad", "locked"] },
+      {"key": "llegaCostoUnidad", "control": ["number"], "ctrlclass": ["unidad", "locked"],
+        "listeners": [{"change": function({obj, col, input, event, sectionKey}){
+          costoChange(obj, sectionKey, "llega", "unidad");
+          modGanancia(sectionKey, "llega", "unidad");
+        }}]
+        },
+      {"key": "llegaPrecioUnidad", "control": ["number"], "ctrlclass": ["unidad", "locked"],
+        "listeners": [{"change": function({obj, col, input, event, sectionKey}){
+          modGanancia(sectionKey, "llega", "unidad");
+        }}]
+        },
+      {"key": "llegaGananciaUnidad", "control": ["text"], "ctrlclass": ["unidad", "locked"] },
+      {"key": "llegaExistenciaUnidades", "control": ["number"], "ctrlclass": ["unidad"],
+        "listeners": [{"change": function({obj, col, input, event, sectionKey}){
+          llegaExistenciaChange(sectionKey, obj, "unidad");
+        }}]
+        },
+
+      {"key": "nuevoCostoSinIvaUnidad", "title": "Costo", "control": ["number"], "ctrlclass": ["unidad"],
+        "listeners": [{"change": function({obj, col, input, event, sectionKey}){
+          costoSinIvaChange(obj, sectionKey, "nuevo", "unidad");
+          modGanancia(sectionKey, "nuevo", "unidad");
+        }}]
+        },
+      {"key": "nuevoIvaUnidad", "title": "Costo", "control": ["number"], "ctrlclass": ["unidad", "locked"] },
+      {"key": "nuevoCostoUnidad", "title": "Costo", "control": ["number"], "ctrlclass": ["unidad"],
+        "listeners": [{"change": function({obj, col, input, event, sectionKey}){
+          costoChange(obj, sectionKey, "nuevo", "unidad");
+          modGanancia(sectionKey, "nuevo", "unidad");
+        }}]
+        },
+      {"key": "nuevoPrecioUnidad", "title": "Precio", "control": ["number"], "ctrlclass": ["unidad"],
+        "listeners": [{"change": function({obj, col, input, event, sectionKey}){
+          modGanancia(sectionKey, "nuevo", "unidad");
+        }}]
+        },
+      {"key": "nuevoGananciaUnidad", "control": ["text"], "ctrlclass": ["unidad", "locked"] },
+      {"key": "nuevoExistenciaUnidades", "control": ["number"], "ctrlclass": ["unidad", "locked"] },
+      {"key": "minimoUnidades", "control": ["number"], "ctrlclass": ["unidad"] },
+
+      {"key": "costoSinIvaPaquete", "control": ["number"], "ctrlclass": ["paquete", "locked"],
+        "listeners": [{"change": function({obj, col, input, event, sectionKey}){
+          costoSinIvaChange(obj, sectionKey, "", "paquete");
+          modGanancia(sectionKey, "", "paquete");
+        }}]
+        },
+      {"key": "ivaPaquete", "control": ["number"], "ctrlclass": ["paquete", "locked"] },
+      {"key": "costoPaquete", "control": ["number"], "ctrlclass": ["paquete", "locked"],
+        "listeners": [{"change": function({obj, col, input, event, sectionKey}){
+          costoChange(obj, sectionKey, "", "paquete");
+          modGanancia(sectionKey, "", "paquete");
+        }}]
+        },
+      {"key": "precioPaquete", "control": ["number"], "ctrlclass": ["paquete", "locked"],
+        "listeners": [{"change": function({obj, col, input, event, sectionKey}){
+          modGanancia(sectionKey, "", "paquete");
+        }}]
+        },
+      {"key": "gananciaPaquete", "control": ["text"], "ctrlclass": ["paquete", "locked"] },
+      {"key": "existenciaPaquetes", "control": ["number"], "ctrlclass": ["paquete", "locked"] },
+
+      {"key": "llegaCostoSinIvaPaquete", "control": ["number"], "ctrlclass": ["paquete", "locked"],
+        "listeners": [{"change": function({obj, col, input, event, sectionKey}){
+          costoSinIvaChange(obj, sectionKey, "llega", "paquete");
+          modGanancia(sectionKey, "llega", "paquete");
+        }}]
+        },
+      {"key": "llegaIvaPaquete", "control": ["number"], "ctrlclass": ["paquete", "locked"] },
+      {"key": "llegaCostoPaquete", "control": ["number"], "ctrlclass": ["paquete", "locked"],
+        "listeners": [{"change": function({obj, col, input, event, sectionKey}){
+          costoChange(obj, sectionKey, "llega", "paquete");
+          modGanancia(sectionKey, "llega", "paquete");
+        }}]
+        },
+      {"key": "llegaPrecioPaquete", "control": ["number"], "ctrlclass": ["paquete", "locked"],
+        "listeners": [{"change": function({obj, col, input, event, sectionKey}){
+          modGanancia(sectionKey, "llega", "paquete");
+        }}]
+        },
+      {"key": "llegaGananciaPaquete", "control": ["text"], "ctrlclass": ["paquete", "locked"] },
+      {"key": "llegaExistenciaPaquetes", "control": ["number"], "ctrlclass": ["paquete"],
+        "listeners": [{"change": function({obj, col, input, event, sectionKey}){
+          llegaExistenciaChange(sectionKey, obj, "paquete");
+        }}]
+        },
+
+      {"key": "nuevoCostoSinIvaPaquete", "title": "Costo", "control": ["number"], "ctrlclass": ["paquete"],
+        "listeners": [{"change": function({obj, col, input, event, sectionKey}){
+          costoSinIvaChange(obj, sectionKey, "nuevo", "paquete");
+          modGanancia(sectionKey, "nuevo", "paquete");
+        }}]
+        },
+      {"key": "nuevoIvaPaquete", "title": "Costo", "control": ["number"], "ctrlclass": ["paquete", "locked"] },
+      {"key": "nuevoCostoPaquete", "title": "Costo", "control": ["number"], "ctrlclass": ["paquete"],
+        "listeners": [{"change": function({obj, col, input, event, sectionKey}){
+          costoChange(obj, sectionKey, "nuevo", "paquete");
+          modGanancia(sectionKey, "nuevo", "paquete");
+        }}]
+        },
+      {"key": "nuevoPrecioPaquete", "title": "Precio", "control": ["number"], "ctrlclass": ["paquete"],
+        "listeners": [{"change": function({obj, col, input, event, sectionKey}){
+          modGanancia(sectionKey, "nuevo", "paquete");
+        }}]
+        },
+      {"key": "nuevoGananciaPaquete", "control": ["text"], "ctrlclass": ["paquete", "locked"] },
+      {"key": "nuevoExistenciaPaquetes", "control": ["number"], "ctrlclass": ["paquete", "locked"] },
+      {"key": "minimoPaquetes", "control": ["number"], "ctrlclass": ["paquete"],
+        "listeners": [{"change": function({obj, col, input, event, sectionKey}){
+          minimoChange(sectionKey, obj, "paquete");
+        }}]
+        },
+
+      {"key": "costoSinIvaKg", "control": ["number"], "ctrlclass": ["kg", "locked"],
+        "listeners": [{"change": function({obj, col, input, event, sectionKey}){
+          costoSinIvaChange(obj, sectionKey, "", "kg");
+          modGanancia(sectionKey, "", "kg");
+        }}]
+        },
+      {"key": "ivaKg", "control": ["number"], "ctrlclass": ["kg", "locked"] },
+      {"key": "costoKg", "control": ["number"], "ctrlclass": ["kg", "locked"],
+        "listeners": [{"change": function({obj, col, input, event, sectionKey}){
+          costoChange(obj, sectionKey, "", "kg");
+          modGanancia(sectionKey, "", "kg");
+        }}]
+        },
+      {"key": "precioKg", "control": ["number"], "ctrlclass": ["kg", "locked"],
+        "listeners": [{"change": function({obj, col, input, event, sectionKey}){
+          modGanancia(sectionKey, "", "kg");
+        }}]
+        },
+      {"key": "gananciaKg", "control": ["text"], "ctrlclass": ["kg", "locked"] },
+      {"key": "existenciaKgs", "control": ["number"], "ctrlclass": ["kg", "locked"] },
+
+      {"key": "llegaCostoSinIvaKg", "control": ["number"], "ctrlclass": ["kg", "locked"],
+        "listeners": [{"change": function({obj, col, input, event, sectionKey}){
+          costoSinIvaChange(obj, sectionKey, "llega", "kg");
+          modGanancia(sectionKey, "llega", "kg");
+        }}]
+        },
+      {"key": "llegaIvaKg", "control": ["number"], "ctrlclass": ["kg", "locked"] },
+      {"key": "llegaCostoKg", "control": ["number"], "ctrlclass": ["kg", "locked"],
+        "listeners": [{"change": function({obj, col, input, event, sectionKey}){
+          costoChange(obj, sectionKey, "llega", "kg");
+          modGanancia(sectionKey, "llega", "kg");
+        }}]
+        },
+      {"key": "llegaPrecioKg", "control": ["number"], "ctrlclass": ["kg", "locked"],
+        "listeners": [{"change": function({obj, col, input, event, sectionKey}){
+          modGanancia(sectionKey, "llega", "kg");
+        }}]
+        },
+      {"key": "llegaGananciaKg", "control": ["text"], "ctrlclass": ["kg", "locked"] },
+      {"key": "llegaExistenciaKgs", "control": ["number"], "ctrlclass": ["kg"],
+        "listeners": [{"change": function({obj, col, input, event, sectionKey}){
+          llegaExistenciaChange(sectionKey, obj, "kg");
+        }}]
+        },
+
+      {"key": "nuevoCostoSinIvaKg", "title": "Costo", "control": ["number"], "ctrlclass": ["kg", "locked"],
+        "listeners": [{"change": function({obj, col, input, event, sectionKey}){
+          costoSinIvaChange(obj, sectionKey, "nuevo", "kg");
+          modGanancia(sectionKey, "nuevo", "kg");
+        }}]
+        },
+      {"key": "nuevoIvaKg", "title": "Costo", "control": ["number"], "ctrlclass": ["kg", "locked"] },
+      {"key": "nuevoCostoKg", "title": "Costo", "control": ["number"], "ctrlclass": ["kg", "locked"],
+        "listeners": [{"change": function({obj, col, input, event, sectionKey}){
+          costoChange(obj, sectionKey, "nuevo", "kg");
+          modGanancia(sectionKey, "nuevo", "kg");
+        }}]
+        },
+      {"key": "nuevoPrecioKg", "title": "Precio", "control": ["number"], "ctrlclass": ["kg"],
+        "listeners": [{"change": function({obj, col, input, event, sectionKey}){
+          modGanancia(sectionKey, "nuevo", "kg");
+        }}]
+        },
+      {"key": "nuevoGananciaKg", "control": ["text"], "ctrlclass": ["kg", "locked"] },
+      {"key": "nuevoExistenciaKgs", "control": ["number"], "ctrlclass": ["kg", "locked"] },
+      {"key": "minimoKgs", "control": ["number"], "ctrlclass": ["kg", "locked"] }
+
+      ]; 
+
+});
+
+async function cargaProductos(){
+  productosEntrega=null;
+  const costoTieneIva = document.getElementById("costoTieneIva");
+  const entregaInput = document.getElementById("entregaInput");
+  const cargaEntrega = document.getElementById("cargaEntrega");
+  const divMensaje = document.getElementById("divMensaje");
+  if (!entregaInput.value){
+    alert("Elegir archivo a cargar");
+    return;
+  }
+  const file = entregaInput.files[0];
+  if (!file) {
+      alert("No se ha seleccionado un archivo");
+      return;
+  }
+  const texto = await file.text();
+  const arrayBuffer = await file.arrayBuffer();
+  const bytes = new Uint8Array(arrayBuffer);
+  // convert to base64
+  let binary = "";
+  bytes.forEach(b => binary += String.fromCharCode(b));
+  const base64 = btoa(binary);
+  let res = await myfetch("/entregas/cargar", 
+    {"archivo_entrega": base64, "costoTieneIva": costoTieneIva.checked});
+  if (!res.success){
+    divMensaje.innerText = res.Error;
+  }
+  // let res = await myfetch("/producto/find",  {"searchString": "yeso", "buscaActivo": true});
+  if (res.success) {
+      let tp = document.getElementById("resProductos");
+      if (tp){
+        tp.remove();
+      }
+        let resProductos = res["resultado"];
+        productosEntrega =   resProductos["productosEntrega"];
+        let productosBuscados = resProductos["productosBuscados"];
+        await generaTablaProductos(productosBuscados);
+        entregaInput.value=null;
+  }
+}
+
+function getName(prefix, name, suffix){
+  let rname = prefix? prefix+toTitleCase(name):name;
+  rname += toTitleCase(suffix);
+  return rname;
+}
+
+function getControlByName(sectionKey, name, prefix, unidad){
+  name = prefix? prefix+toTitleCase(name):name;
+  name += toTitleCase(unidad);
+  return getPTInput(sectionKey, name);
+}
+
+function changeMuestra(grupo){
+  return {"change": function({obj, col, input, event, sectionKey}){
+    //console.log(obj.seCompraPor);
+    if (obj.seCompraPor!="paquete" || (obj.seCompraPor=="paquete" && grupo!="paquete")){
+      let inputs = getPTInputsGroup(sectionKey, grupo);
+        Array.from(inputs).forEach(el => {
+            el.readOnly = !input.checked;
+            input.checked? el.classList.remove("disabled") : el.classList.add("disabled");
+        });
+    }
+  }};
+}
+
+function modGanancia(sectionKey, prefix, unidad){
+  if (prefix!="llega"){
+    let costo = getControlByName(sectionKey, "costo", prefix, unidad);
+    let precio = getControlByName(sectionKey, "precio", prefix, unidad);
+    let ganancia = getControlByName(sectionKey, "ganancia", prefix, unidad);
+    let costoVal = parseSmartNumber(costo.value);
+    let precioVal = parseSmartNumber(precio.value);
+    let gananciaVal = parseSmartNumber(100*(precioVal-costoVal)/costoVal);
+    ganancia.value = costoVal??0>0? String(gananciaVal)+"%" : "";
+    if (ganancia.value && gananciaVal<=0 && !precio.classList.contains("disabled")){
+      costo.closest("td").style.setProperty("background-color", "yellow", "important");
+      precio.closest("td").style.setProperty("background-color", "orange", "important");
+      ganancia.style.color="red";
+    } else {
+      precio.closest("td").style.setProperty("background-color", "transparent", "important");
+      costo.closest("td").style.setProperty("background-color", "transparent", "important");
+      ganancia.style.color="black";
+    }
+  }
+}
+
+function costoSinIvaChange(obj, sectionKey, prefix, unidad){
+  let iva = getControlByName(sectionKey, "iva", prefix, unidad);
+  let costoSinIva = getControlByName(sectionKey, "costoSinIva", prefix, unidad);
+  let costo = getControlByName(sectionKey, "costo", prefix, unidad);
+  iva.value = parseSmartNumber(parseSmartNumber(window.IVA/100) * parseSmartNumber(costoSinIva.value));
+  costo.value = parseSmartNumber(parseSmartNumber(costoSinIva.value) + parseSmartNumber(iva.value));
+  if (unidad=="paquete" && obj.seCompraPor=="paquete"){
+    if (obj.numeroUnidades>0){
+      let costoSinIvaUni = getControlByName(sectionKey, "costoSinIva", prefix, "unidad");
+      costoSinIvaUni.value = parseSmartNumber(costoSinIva.value)/parseSmartNumber(obj.numeroUnidades);
+      costoSinIvaChange(obj, sectionKey, prefix, "unidad");
+      modGanancia(sectionKey, prefix, "unidad");
+    }
+    if (obj.numeroKgs>0){
+      let costoSinIvaKg = getControlByName(sectionKey, "costoSinIva", prefix, "kg");
+      costoSinIvaKg.value = parseSmartNumber(costoSinIva.value)/parseSmartNumber(obj.numeroKgs);
+      costoSinIvaChange(obj, sectionKey, prefix, "kg");
+      modGanancia(sectionKey, prefix, "kg");
+    }
+  }
+}
+
+function costoChange(obj, sectionKey, prefix, unidad){
+  let iva = getControlByName(sectionKey, "iva", prefix, unidad);
+  let costoSinIva = getControlByName(sectionKey, "costoSinIva", prefix, unidad);
+  let costo = getControlByName(sectionKey, "costo", prefix, unidad);
+  costoSinIva.value = parseSmartNumber(parseSmartNumber(costo.value)/parseSmartNumber(1+window.IVA/100));
+  iva.value = parseSmartNumber(parseSmartNumber(costo.value)-parseSmartNumber(costoSinIva.value));
+  if (unidad=="paquete" && obj.seCompraPor=="paquete"){
+      if (obj.numeroUnidades>0){
+        let costoUni = getControlByName(sectionKey, "costo", prefix, "unidad");
+        costoUni.value = parseSmartNumber(costo.value)/parseSmartNumber(obj.numeroUnidades);
+        costoChange(obj, sectionKey, prefix, "unidad");
+        modGanancia(sectionKey, prefix, "unidad");
+      }
+      if (obj.numeroKgs>0){
+        let costoKg = getControlByName(sectionKey, "costo", prefix, "kg");
+        costoKg.value = parseSmartNumber(costo.value)/parseSmartNumber(obj.numeroKgs);
+        costoChange(obj, sectionKey, prefix, "kg");
+        modGanancia(sectionKey, prefix, "kg");
+      }
+  }
+}
+
+function llegaExistenciaChange(sectionKey, obj, unidad){
+  let existencia = getControlByName(sectionKey, "existencia", "", pluralUnidad(unidad));
+  let nuevoExistencia = getControlByName(sectionKey, "nuevoExistencia", "", pluralUnidad(unidad));
+  let llegaExistencia = getControlByName(sectionKey, "llegaExistencia", "", pluralUnidad(unidad));
+  nuevoExistencia.value = parseSmartNumber(llegaExistencia.value)+parseSmartNumber(existencia.value);
+  if (obj.seCompraPor=="paquete" && unidad=="paquete"){
+    if (obj.numeroUnidades>0){
+      let nuevoCostoSinIvaUni = getControlByName(sectionKey, "nuevoCostoSinIva", "", "unidad");
+      let nuevoIvaUni = getControlByName(sectionKey, "nuevoIva", "", "unidad");
+      let nuevoCostoUni = getControlByName(sectionKey, "nuevoCosto", "", "unidad");
+      let minimoUni = getControlByName(sectionKey, "minimo", "", pluralUnidad("unidad"));
+      nuevoCostoSinIvaUni.classList.add("locked");
+      nuevoIvaUni.classList.add("locked");
+      nuevoCostoUni.classList.add("locked");
+      minimoUni.classList.add("locked");
+      //let existenciaUni = getControlByName(sectionKey, "existencia", "", pluralUnidad(unidad));
+      //let hayExistenciaUni = getControlByName(sectionKey, "hayExistencia", "", upluralUnidad(unidad));
+      let llegaExistenciaUni = getControlByName(sectionKey, "llegaExistencia", "", pluralUnidad("unidad"));
+      llegaExistenciaUni.value = parseSmartNumber(llegaExistencia.value)*parseSmartNumber(obj.numeroUnidades);
+      llegaExistenciaUni.classList.add("locked");
+      llegaExistenciaChange(sectionKey, obj, "unidad");
+    }
+    if (obj.numeroKgs>0){
+      let nuevoCostoSinIvaKg = getControlByName(sectionKey, "nuevoCostoSinIva", "", "kg");
+      let nuevoIvaKg= getControlByName(sectionKey, "nuevoIva", "", "kg");
+      let nuevoCostoKg = getControlByName(sectionKey, "nuevoCosto", "", "kg");
+      let minimoKg = getControlByName(sectionKey, "minimo", "", pluralUnidad("kg"));
+      nuevoCostoSinIvaKg.classList.add("locked");
+      nuevoIvaKg.classList.add("locked");
+      nuevoCostoKg.classList.add("locked");
+      minimoKg.classList.add("locked");
+      //let existenciaKg= getControlByName(sectionKey, "existencia", "", pluralUnidad(unidad));
+      //let hayExistenciaKg = getControlByName(sectionKey, "hayExistencia", "", pluralUnidad(unidad));
+      let llegaExistenciaKg = getControlByName(sectionKey, "llegaExistencia", "", pluralUnidad("kg"));
+      llegaExistenciaKg.value = parseSmartNumber(llegaExistencia.value)*parseSmartNumber(obj.numeroKgs);
+      llegaExistenciaKg.classList.add("locked");
+      llegaExistenciaChange(sectionKey, obj, "kg");
+    }
+  }
+}
+
+function minimoChange(sectionKey, obj, unidad){
+  if (obj.seCompraPor=="paquete" && unidad=="paquete"){
+    let minimoPaq = getControlByName(sectionKey, "minimo", "", pluralUnidad(unidad));
+    if (obj.numeroUnidades>0){
+      let minimoUni = getControlByName(sectionKey, "minimo", "", pluralUnidad("unidad"));
+      minimoUni.value = parseSmartNumber(nuevoMinimoPaq.value)*parseSmartNumber(obj.numeroUnidades);
+    }
+    if (obj.numeroKgs>0){
+      let minimoKg = getControlByName(sectionKey, "minimo", "", pluralUnidad("kg"));
+      minimoKg.value = parseSmartNumber(minimoPaq.value)*parseSmartNumber(obj.numeroKgs);
+    }
+  }
+}
+
+function generaTablaProductos(productosBuscados){
+  //console.log("productosBuscados "+productosBuscados);
+  //console.log("columnas "+columnas);
+  //console.log("productTemplate "+productTemplate);
+  let tablaProductos = renderProductTable(productosBuscados, columnas, productTemplate, "productoId");
+  tablaProductos.classList.add("zebra");
+  tablaProductos.classList.add("render-section");
+  //tablaProductos.classList.add("no-border-table");
+  tablaProductos.style.width="100%";
+  tablaProductos.setAttribute("id","resProductos");
+  //tablaProductos.style.fontFamily = "Arial, sans-serif";
+  //tablaProductos.style.border="1px solid black";
+  document.body.append(tablaProductos);
+  let tipoCosto = "costoSinIva";
+  // if (!costoTieneIva.checked){
+  //   tipoCosto += "SinIva";
+  // }
+  let afterLoad = {"muestraUnidad": ["change"], "muestraPaquete": ["change"], "muestraKg":["change"],
+    [getName("", tipoCosto, "unidad")]: ["change"], "precioUnidad": ["change"],
+    [getName("llega", tipoCosto, "unidad")]: ["change"], "llegaPrecioUnidad": ["change"],
+    [getName("nuevo", tipoCosto, "unidad")]: ["change"], "nuevoPrecioUnidad": ["change"],
+    [getName("", tipoCosto, "paquete")]: ["change"], "precioPaquete": ["change"],
+    [getName("llega", tipoCosto, "paquete")]: ["change"], "llegaPrecioPaquete": ["change"],
+    [getName("nuevo", tipoCosto, "paquete")]: ["change"], "nuevoPrecioPaquete": ["change"],
+    [getName("", tipoCosto, "kg")]: ["change"], "precioKg": ["change"],
+    [getName("llega", tipoCosto, "kg")]: ["change"], "llegaPrecioKg": ["change"],
+    [getName("nuevo", tipoCosto, "kg")]: ["change"], "nuevoPrecioKg": ["change"],
+    "llegaExistenciaUnidades": ["change"],
+    "llegaExistenciaPaquetes": ["change"],
+    "llegaExistenciaKgs": ["change"]
+  };
+  //console.log(JSON.stringify(afterLoad));
+  executeAfterLoad(tablaProductos, afterLoad);
+  if (tablaProductos.querySelector("tbody").rows.length>0){
+    let thead = document.createElement("thead");
+    thead.style.position = "sticky";
+    thead.style.top = "0";
+    let tr = document.createElement("tr");
+    tr.style.backgroundColor="lightblue";
+    let th = document.createElement("th");
+    th.innerText="#";
+    tr.append(th);
+    th = document.createElement("th");
+    th.innerText="Codigo";
+    tr.append(th);
+    th = document.createElement("th");
+    th.innerText="Descripcion";
+    tr.append(th);
+    th = document.createElement("th");
+    th.innerText="Costo Iva";
+    tr.append(th);
+    th = document.createElement("th");
+    th.innerText="Precio";
+    tr.append(th);
+    th = document.createElement("th");
+    th.innerText="Cantidad";
+    tr.append(th);
+    th = document.createElement("th");
+    th.innerText="Mensajes";
+    tr.append(th);
+    th = document.createElement("th");
+    tr.append(th);
+    thead.append(tr);
+    tablaProductos.append(thead);
+    tr = document.createElement("tr");
+    td = document.createElement("td");
+    td.setAttribute("colSpan", 8);
+    td.innerHTML = "<br/><br/><br/>";
+    tr.append(td);
+    tablaProductos.append(tr);
+  }
+}
+
+</script>
+</body>
+</html>

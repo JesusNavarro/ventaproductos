@@ -1,0 +1,32 @@
+<html>
+<head>
+  <meta
+  name="viewport"
+  content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
+/>
+<style>
+    html, body {
+    touch-action: manipulation;
+}
+</style>
+</head>
+<body>
+<h2>Bienvenido</h2>
+<div id="mensajeRegistro"></div>
+<script>
+const configDev = {{ configDev | tojson }};
+const thisIP = {{ thisIP | tojson}};
+
+//console.log(configDev);
+
+if (thisIP && configDev && configDev["MS_SOY"] && configDev["MS_SOY"]["direccionIP"] && thisIP!=configDev["MS_SOY"]["direccionIP"]){
+    mensajeRegistro = document.getElementById("mensajeRegistro");
+    mensajeRegistro.style.color = "red";
+    mensajeRegistro.innerHTML = '<b>Ventas, inventario, etc. funciona bien, solo no se puede pasar ventas de un dispositivo a otro</b>';
+    mensajeRegistro.innerHTML += `<br/>La direccion IP de este dispositivo cambio a ${thisIP}`;
+    mensajeRegistro.innerHTML += '<br/>Ir a la seccion de AJUSTES y actualizar en ambos dispositivos para que puedan comunicarse';
+    mensajeRegistro.innerHTML += '<br/>Y reiniciar la aplicacion en cada uno de ellos<br/><br/>';
+}
+</script>
+</body>
+</html>

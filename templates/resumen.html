@@ -1,0 +1,957 @@
+<html>
+<head>
+<meta
+  charset="UTF-8"
+  name="viewport"
+  content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
+/>
+<title>Ventas por Día</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+    }
+    html, body {
+        touch-action: manipulation;
+        background-color: #F7F7F7;
+    }
+    select {
+        font-size: 16px;
+        padding: 4px 8px;
+        margin-bottom: 15px;
+    }
+    /* table {
+        border-collapse: collapse;
+        width: 100%;
+        table-layout: fixed;
+        border: none;
+        border-style: none;
+    }
+    table td, th{
+        border-collapse: collapse;
+        width: 100%;
+        table-layout: fixed;
+        border: none;
+        border-style: none;
+    } */
+    #resumenTable {
+        border-collapse: collapse;
+        width: 100%;
+        table-layout: fixed;
+        font-size: 14px;
+        background-color: #F7F7F7;
+    }
+    #resumenTable th, td {
+        border: 1px solid #ccc !important;
+        padding: 4px !important;
+        text-align: center !important;
+        white-space: nowrap !important;
+        background-color: #F7F7F7;
+    }
+    label:has(input[type="radio"]:checked) {
+        background-color: lightblue;
+        font-weight: bold;
+    }
+    .radioLabel {
+        display: block;
+        border: 1px solid #ccc;
+        padding: 5px 25px 5px 25px;
+        border-radius: 5px;
+        margin-bottom: 5px;
+        text-align: center;
+        cursor: pointer;
+    }
+    .monto.active {
+        font-weight: bold !important;
+        border-color:blue !important;
+        border-style: double !important;
+        border-width: 3px !important;
+    }
+    .monto {
+        font-weight: normal;
+    }
+    td.venta_semana.active {
+        border-color:blue !important;
+        border-style: double !important;
+        border-width: 3px !important;
+        background-color: rgb(186, 241, 255) !important;
+    }
+    td.venta_semana {
+        font-weight: normal;
+        background-color: #F7F7F7;
+    }
+/* 
+    thead th {
+        background: #f0f0f0;
+        font-weight: bold;
+    }
+
+    tbody th {
+        background: #f9f9f9;
+        text-align: left;
+        position: sticky;
+        left: 0;
+        z-index: 1;
+    }
+
+    .month-total {
+        background: #e8f4ff;
+        font-weight: bold;
+    }
+
+    .cell {
+        line-height: 1.2em;
+    }
+
+    .ventas {
+        color: #555;
+        font-size: 11px;
+    } */
+
+    /* .monto {
+        font-weight: bold;
+
+    } */
+
+/* table {
+    border-collapse: collapse;
+    width: 100%;
+} */
+/* td.cell {
+    text-align: center;
+    padding: 4px;
+    transition: background-color 0.3s ease;
+}
+td.month-total {
+    font-weight: bold;
+    background-color: #f3f3f3;
+}
+td.cell .monto {
+    font-size: 0.85rem;
+    z-index: 1;
+    position: relative;
+} */
+
+  .file-summary {
+    background: #F7F7F7;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    padding: 20px 25px;
+    margin: 25px 0;
+  }
+  .file-header {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: baseline;
+    /* border-bottom: 2px solid #ddd; 
+    padding-bottom: 10px;
+    margin-bottom: 10px; 
+    gap: 10px; */
+  }
+  .file-header h2 {
+    font-size: 1.4em;
+    margin: 0;
+    color: #1b4d8a;
+    text-transform: capitalize;
+  }
+  .file-totals {
+    font-size: 1.1em;
+    font-weight: 500;
+  }
+  .highlight-total {
+    color: #0d7a32;
+    font-weight: 700;
+  }
+  .venta {
+    background: #fdfdfd;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    margin: 10px 0;
+    padding: 10px 15px;
+  }
+  .venta h3 {
+    margin: 0 0 8px 0;
+    color: #333;
+  }
+  .totales {
+    font-weight: bold;
+    text-align: right;
+  }
+  .nan {
+    color: red;
+    font-weight: bold;
+  }
+  table.detallesDia {
+    width: 100%;
+    border-collapse: collapse;
+    border: none;
+  }
+  table.detallesDia th, td {
+    text-align: left;
+    padding: 4px 8px;
+    border: none;
+    border-bottom: 1px solid #eee;
+    width: 1%;
+    display:flexbox;
+    
+  }
+  table.detallesDia th {
+    background: #f0f3f8;
+    color: #333;
+    width: 1%; 
+  }
+  .ventas_semana{
+    display: none;
+  }
+  .ventas_semana.active {
+    display:block;
+  }
+  .ventas_anio {
+    display: none;
+  }
+  .ventas_anio.active {
+    display: block;
+  }
+
+  .venta-row.cancelled {
+    /* opacity: 0.45;
+    text-decoration: line-through; */
+    color:red;
+    font-style: oblique;
+  }
+</style>
+</head>
+<body>
+<table class="ventas_semana">
+    <tr id="ventasSemana">
+    </tr>
+</table>
+<table style="border: none; border-collapse: collapse;" class="ventas_anio">
+    <tr style="vertical-align: middle;">
+        <td style="vertical-align: middle;">
+            <select id="anios" style="vertical-align: top;">
+            </select>
+        </td>
+        <td id="menuMeses" style="width: 100%; vertical-align: middle; display: flex; gap: 6px; align-items: center; justify-content: space-evenly;"></td>
+    </tr>
+</table>
+<br/>
+<table id="resumenTable" class="ventas_anio">
+    <thead>
+        <tr>
+            <th></th>
+            <!-- Days 1–31 -->
+            <!-- Generated explicitly for clarity -->
+            <th>1</th><th>2</th><th>3</th><th>4</th><th>5</th>
+            <th>6</th><th>7</th><th>8</th><th>9</th><th>10</th>
+            <th>11</th><th>12</th><th>13</th><th>14</th><th>15</th>
+            <th>16</th><th>17</th><th>18</th><th>19</th><th>20</th>
+            <th>21</th><th>22</th><th>23</th><th>24</th><th>25</th>
+            <th>26</th><th>27</th><th>28</th><th>29</th><th>30</th>
+            <th>31</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody id="resumen">
+        <!-- Remaining months (Mar–Dic) would follow the same pattern -->
+    </tbody>
+</table>
+<br/>
+<table width="100%" style="border-collapse: collapse !important; border: none !important;">
+    <tr>
+    <td id="tdPendientes" style="text-align: left; display:none;">
+        Solo Pendientes <input type="checkbox" id="pendientes">
+    </td>
+    <td id="tdDispositivos" style="display: none;">
+        <select id="dispositivosSel" style="vertical-align: top;">
+            </select>
+    </td>
+    <td id="cambiaFechaVenta" style="display:none; text-align: center;">
+        <input type="date" id="nuevaFechaVenta" style="height: 30px;">
+        <input type="button" id="btnCambiaFechaVenta" value="Modificar Fecha Venta" style="height: 30px;">
+    </td>
+    <td id="menuTicket" style="display:none; text-align: right;">
+        <input type="button" id="btnMenuTicket" value="Ticket" style="height: 30px;">
+    </td>
+    </tr>
+</table>
+<div id="output" style="background-color: #F7F7F7;"></div>
+<script>
+const configDev = {{ configDev | tojson }};
+const thisIP = {{ thisIP | tojson}};
+
+if (configDev && configDev["MS_SOY"]){
+    window.thisRol = configDev["MS_SOY"]["rol"];
+}
+
+let productosActuales;
+
+const now = new Date();
+let currentDate = { year: now.getFullYear(), month: now.getMonth() + 1, day: now.getDate() };
+const anios = document.getElementById("anios");
+const resumen = document.getElementById("resumen");
+const menuMeses = document.getElementById("menuMeses");
+const output = document.getElementById("output");
+const ventasSemana = document.getElementById("ventasSemana");
+const tdDispositivos =  document.getElementById("tdDispositivos");
+const dispositivosSel = document.getElementById("dispositivosSel");
+const tdPendientes = document.getElementById("tdPendientes");
+const pendientes = document.getElementById("pendientes");
+const cambiaFechaVenta = document.getElementById("cambiaFechaVenta");
+if (window.thisRol =="esclavo"){
+    tdPendientes.style.display="";
+    pendientes.addEventListener("change",  function(){
+        filtraDetallesDia(currentDate.year, currentDate.month, currentDate.day, dispositivosSel.value || null, pendientes.checked);
+    });
+}
+const menuTicket = document.getElementById("menuTicket");
+const btnMenuTicket = document.getElementById("btnMenuTicket");
+
+dispositivosSel.addEventListener("change", function(){
+    filtraDetallesDia(currentDate.year, currentDate.month, currentDate.day, dispositivosSel.value || null);
+});
+
+const meses = ["","Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dec", "Todos"]
+
+function activarCambiarFecha(){
+
+    const btnCambiaFechaVenta = document.getElementById("btnCambiaFechaVenta");
+
+    btnCambiaFechaVenta.addEventListener("click", async function() {
+        const detalles = document.getElementById("ventas-container");
+        const nuevaFechaVenta = document.getElementById("nuevaFechaVenta");
+        if (!nuevaFechaVenta.value){
+            alert("Seleccionar una nueva fecha de venta");
+            return;
+        }
+        let ventasActivar = [];
+        const prodCambiados = Array.from(
+            detalles.querySelectorAll('input.row-cancel:checked')
+        ).map(cb => cb.closest('tr'));
+        prodCambiados.forEach(tr => {
+            //console.log(tr.dataset);
+            ventasActivar.push(tr.dataset);
+        });
+        if (ventasActivar.length>0){
+            //console.log(ventasActivar);
+            if (!confirm(`¿Cambiar fecha de venta de ${ventasActivar.length} productos a ${nuevaFechaVenta.value}?`)) return;
+            res = await myfetch("/ventas/cambiarFecha", {"ventas":ventasActivar, "nuevaFecha": nuevaFechaVenta.value});
+            if (res.success){
+                await actualizaPagina(
+                    currentDate.year,
+                    currentDate.month,
+                    currentDate.day
+                );
+                nuevaFechaVenta.value=null;
+            } else {
+                centerMessage("Algunos productos no modificados");
+            }
+        } else {
+            alert("No hay productos seleccionados para cambiar su fecha de venta");
+        }
+    });
+
+}
+
+function applyHeatMap() {
+    const cells = document.querySelectorAll('td.monto');
+    const values = [];
+    cells.forEach(el => {
+        val = parseFloat(el.textContent);
+        //console.log(val);
+        if (!isNaN(val)) values.push(val);
+    });
+    if (!values.length) return;
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    cells.forEach(el => {
+        const value = parseFloat(el.textContent);
+        if (isNaN(value)) return;
+        const intensity = (value - min) / (max - min || 1);
+        const color = heatColor(intensity);
+        el.style.backgroundColor = color;
+    });
+}
+
+function getMesSelected(){
+    let selectedMonth = document.querySelector('input[name="mes"]:checked').value;
+    return selectedMonth.substring(selectedMonth.lastIndexOf('_') + 1);
+}
+
+function diaSelect(diaTd) {
+    let mesSelected = diaTd.id.split('_').slice(2, 3).join('');
+    let diaSelected = diaTd.id.substring(diaTd.id.lastIndexOf('_') + 1);
+    if (!isValidDate(anios.value, mesSelected, diaSelected)){
+        alert("Fecha no valida: "+diaSelected+" "+meses[mesSelected]+" "+anios.value);
+        return;
+    }
+    const cells = document.querySelectorAll('td.monto');
+    cells.forEach(el => {
+        el.classList.remove("active");
+    });
+    diaTd.classList.add("active");
+    document.querySelector(`input[name="mes"][value="${mesSelected}"]`).checked=true;
+    mesChanged();
+    //console.log(anios.value + " "+ mesSelected + " "+ diaSelected);
+    displayDetallesDia(anios.value, mesSelected, diaSelected);
+}
+
+function filtraDetallesDia(vanio, vmes, vdia, dispId=null, pendientes=false){
+    if (!dispId || dispId==null){
+        tdDispositivos.style.display="none";
+    }
+    cambiaFechaVenta.style.display='none';
+    if (productosActuales){
+        if (window.thisRol=="maestro"){
+            cambiaFechaVenta.style.display='';
+        }
+        output.innerHTML='';
+        //console.log(res);
+        const ventasMap = {};
+        let errores = 0;
+        // res["resultado"].forEach(row => {
+        //     const clave = `${row["dispositivoId"]}-${row["fechaVenta"]}`;
+        //     if (!ventasMap[clave]) ventasMap[clave] = [];
+        //     ventasMap[clave].push(row);
+        // });
+
+        const filasFiltradas = productosActuales.filter(row => {
+            // filtro por dispositivo
+            if (dispId !== null && row.dispositivoId !== dispId) {
+                return false;
+            }
+            // filtro por pendientes
+            if (pendientes === true && row.fechaInventario != null) {
+                return false;
+            }
+            return true;
+        });
+
+        filasFiltradas.forEach(row => {
+            const clave = `${row["dispositivoId"]}-${row["fechaVenta"]}`;
+            if (!ventasMap[clave]) ventasMap[clave] = [];
+            ventasMap[clave].push(row);
+        });
+
+        const ventas = Object.entries(ventasMap)
+            .map(([clave, productos]) => {
+            const fechaObj = new Date(productos[0].fechaVenta);
+            const totalVenta = productos.reduce((sum, p) => sum + ((isNaN(p.subtotal) || p.cancelada)? 0 : p.subtotal), 0);
+            return { clave, productos, totalVenta, fechaObj };
+            })
+            .sort((a, b) => b.fechaObj - a.fechaObj );
+
+        const totalDia = ventas.reduce((sum, v) => sum + v.totalVenta, 0);
+        const fechaDelDia = `${vdia}/${vmes}/${vanio}`;
+
+        const resumenDia = document.createElement("div");
+        resumenDia.className = "file-summary";
+
+        const contHeader = document.createElement("div");
+        contHeader.className = "file-header";
+        contHeader.innerHTML = `
+            <div>
+                <h2 id="fechaDelDia" style="align:left;">${getWeekdaySpanish(vanio, vmes, vdia)} ${fechaDelDia}</h2>
+            </div>
+            <div style="align:left;">
+                <h2 style="align:left;">
+                <span class="file-totals" style="align:left;">
+                Ventas: <b>${ventas.length}</b> &nbsp;|&nbsp;
+                Total del día: <span class="highlight-total">$${totalDia.toFixed(2)}
+                </span>
+                </h2>
+            </div>
+        `;
+        // <button class="toggle-dia">${detallesVisibles ? "Ocultar detalles del día" : "Mostrar detalles del día"}</button>
+
+        const detalles = document.createElement("div");
+        detalles.className = "ventas-container";
+        detalles.id = "ventas-container";
+        //detalles.style.display = detallesVisibles ? "block" : "none";
+        detalles.style.display = "block" ;
+
+        // contHeader.querySelector(".toggle-dia").addEventListener("click", (e) => {
+        //     const visible = detalles.style.display === "block";
+        //     detalles.style.display = visible ? "none" : "block";
+        //     e.target.textContent = visible ? "Mostrar detalles del día" : "Ocultar detalles del día";
+        // });
+
+        resumenDia.appendChild(contHeader);
+        resumenDia.appendChild(detalles);
+
+        // const divVenta = document.createElement("div");
+        // divVenta.className = "venta";
+        ventasHTML = `
+        <table style="width:100%; border-collapse: collapse !important;" class="detallesDia">
+            <tr style='position: sticky; top: 0;'>
+            <th><button id="btn-cancel-mode" data-active="0">
+                <img src="static/imagenes/cancela_venta.png" style="width: 25px; height: 25px;"/>
+            </button></th>`;
+
+        let headerColspan = 7;
+        if (window.thisRol == "maestro"){
+            ventasHTML += `<th style='position: sticky; top: 0;'>Dispositivo</th>
+            <!--th style='position: sticky; top: 0;'>Id</th-->
+            <th style='position: sticky; top: 0;'>Barras</th>
+            <th style='position: sticky; top: 0;'>Claves</th>`;
+            headerColspan+=3;
+        }
+        ventasHTML += `<th style='position: sticky; top: 0;'>Codigo</th>
+                <th style='position: sticky; top: 0;'>Descripción</th>
+                <th style='position: sticky; top: 0;'>Tipo</th>
+                <th style='position: sticky; top: 0;'>Cantidad</th>
+                <th style='position: sticky; top: 0;'>Precio</th>
+                <th style='position: sticky; top: 0;'>Precio Venta</th>
+                <th style='position: sticky; top: 0;'>Subtotal</th>
+                </tr>`;
+             //<!--thead--><!--/tbody-->
+
+        tipoVentas = ['', 'unidad', 'paquete', 'kilo', 'comun']
+        if (!dispId){
+            dispositivosSel.innerHTML = "";
+        }
+        ventas.forEach((venta, idx) => {
+            //<!--/thead></table><table class="detallesDia" style="width:100%; border-collapse: collapse !important;"><thead-->
+            // <!--/thead-->
+            // <!--tbody-->
+            ventasHTML+=`<tr class="venta-header"
+                data-venta-id="${venta.clave}">
+                <th colspan='${headerColspan}' style="vertical-align: top;">(${ventas.length - idx}) ${venta.productos[0].fechaVenta.substring(11,16)}
+                <input type="checkbox" class="venta-checkbox"/></th>
+                <th style="text-align:right; vertical-align: top;"><font color="green">$${venta.totalVenta.toFixed(2)}</font>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</th>
+                </tr>
+                `;
+            venta.productos.forEach(p => {
+                if (!dispId){
+                    const existsDispo = Array.from(dispositivosSel.options).some(opt => opt.value == p.dispositivoId);
+                    if (!existsDispo){
+                        let opt = document.createElement("option");
+                        opt.value=p.dispositivoId;
+                        opt.textContent=nombreDispositivo(p.dispositivoId);
+                        dispositivosSel.options.add(opt);
+                    }
+                }
+
+                ventasHTML+=`<tr class="venta-row" data-venta-id="${venta.clave}"
+                    data-dispositivo-id="${p.dispositivoId}"
+                    data-fecha-venta="${p.fechaVenta}"
+                    data-producto-id="${p.productoId}"
+                    data-tipo-venta-id="${p.tipoVentaId}"
+                    data-cancel-initial="${p.cancelada ? 1 : 0}"
+                    data-cantidad="${p.cantidad}"
+                    data-descripcion="${p.descripcion}"
+                    data-subtotal="${p.subtotal}"
+                    data-sin-inventario="${parseInt(p.sinInventario)}">`;
+                if ((window.thisRol == "esclavo" && p.fechaInventario)){
+                    ventasHTML+=`<td></td>`;
+                } else {
+                    ventasHTML+=`<td><input type="checkbox" class="row-cancel"/></td>`;
+                }
+                if (window.thisRol == "maestro"){
+                    ventasHTML+=`<td style="border: none;">${nombreDispositivo(p.dispositivoId)}</td>
+                        <!--td style="border: none;">${p.productoId}</td-->
+                        <td style="border: none;">${p.codigoBarras}</td>
+                        <td style="border: none;">${p.claves}</td>`;
+                }
+                ventasHTML+=`<td>${p.codigoNumerico}</td>
+                    <td>${p.descripcion}</td>`;
+                let tipoVenta = tipoVentas[Math.abs(p.tipoVentaId)];
+                if (p.tipoVentaId==-1){
+                    tipoVenta=p.unidadInv;
+                }
+                ventasHTML+=`<td>${tipoVenta}</td>
+                <td class="${isNaN(p.cantidad) ? 'nan' : ''}">${isNaN(p.cantidad)? p.cantidad : p.cantidad}</td>
+                <td class="${isNaN(p.precio) ? 'nan' : ''}">$${isNaN(p.precio)? p.precio : p.precio.toFixed(2)}</td>
+                <td class="${isNaN(p.precioVenta) ? 'nan' : ''}">$${isNaN(p.precioVenta)? p.precioVenta : p.precioVenta.toFixed(2)}</td> 
+                <td class="${isNaN(p.subtotal) ? 'nan' : ''}" '>$${isNaN(p.subtotal)? p.subtotal : p.subtotal.toFixed(2)}</td>
+                </tr>`;
+            });
+        });
+        //divVenta.innerHTML=ventasHTML+`</table>`;
+        //detalles.appendChild(divVenta);
+        detalles.innerHTML=ventasHTML+`</table>`;
+        output.appendChild(resumenDia);
+
+        activateCancelLogic();
+        activateImprimir();
+
+        if (!dispId || dispId==null){
+            if (dispositivosSel.options.length>0){
+                tdDispositivos.style.display="";
+            }
+            if (dispositivosSel.options.length>1){
+                const opt = new Option("Todos", "", true, true);
+                dispositivosSel.add(opt, 0);
+            }
+        }
+    }
+}
+
+async function displayDetallesDia(vanio, vmes, vdia){
+    //console.log("recibi "+ vanio+ " " +vmes + " "+ vdia);
+    res = await myfetch("/ventas/dia", {"anio": Number(vanio), "mes": Number(vmes), "dia":Number(vdia)});
+    if (res.success){
+        productosActuales = res["resultado"];
+        filtraDetallesDia(vanio, vmes, vdia)
+    } else {
+        output.innerHTML='';
+    }
+}
+
+/* White → Dark Red */
+// function heatColor(t) {
+//     const r = Math.round(255 * (1 - t));
+//     const g = 255;
+//     const b = Math.round(255 * (1 - t));
+// }
+
+function heatColor(t) {
+    // Clamp t between 0 and 1  for rgb(0, 206, 255)
+    t = Math.max(0, Math.min(1, t));
+    const r = Math.round(255 + t * (0   - 255));
+    const g = Math.round(255 + t * (206 - 255));
+    const b = Math.round(255 + t * (255 - 255));
+
+    return `rgb(${r}, ${g}, ${b})`;
+}
+
+async function getYearSales(){
+    //console.log(anios.value);
+    res = await myfetch("/ventas/resumen", Number(anios.value));
+    //console.log(res);
+    if (res.success){
+        //console.log(res);
+        resumen.innerHTML='';
+        for (let i=1; i<=12; i++){
+            let tr = document.createElement("tr");
+            tr.id="tr_mes_"+i;
+            total_mes =0;
+            let td = document.createElement("td");
+            td.textContent = meses[i];
+            td.style.paddingRight = "30px";
+            tr.append(td);
+            for (let j=1; j<=31; j++){
+                td = document.createElement("td");
+                if (isValidDate(anios.value, i, j)){
+                    mesDict = res["resultado"][i];
+                    //console.log("mes "+JSON.stringify(mesDict));
+                    td.id = "td_mes_"+i+"_dia_"+j;
+                    //console.log(mes);
+                    if (mesDict){
+                        dia = mesDict[j];
+                        //console.log("dia "+JSON.stringify(dia));
+                        if (Object.hasOwn(mesDict,j)){
+                            td.classList.add("monto");
+                            td.textContent = (dia/1000).toFixed(1);
+                            td.title = dia;
+                            total_mes+=dia;
+                            td.style.cursor= "crosshair";
+                            td.addEventListener("click", function(){
+                                diaSelect(this);
+                            });
+                        } else {
+                            td.style.backgroundColor = "lightgray";
+                        }
+                    } else {
+                        td.style.backgroundColor = "lightgray";
+                    }
+                } else {
+                    td.style.backgroundColor = "gray";
+                }
+                tr.append(td);
+            }
+            td = document.createElement("td");
+            td.textContent = (total_mes/1000).toFixed(1);
+            td.title = total_mes;
+            td.style.fontWeight = 'bold';
+            tr.append(td);
+            resumen.append(tr);
+        }
+    }
+}
+
+function displayMenuMeses(){
+    menuMeses.innerHTML='';
+    for (let i=1; i<meses.length; i++){
+        let td = document.createElement("div");
+        let lbl = document.createElement("label");
+        let rad = document.createElement("input");
+        let sp = document.createElement("span");
+        sp.innerText=meses[i];
+        rad.setAttribute("type", "radio");
+        rad.setAttribute("name", "mes");
+        rad.value = i;
+        rad.style.display= "none";
+        lbl.classList.add("radioLabel");
+        lbl.append(rad);
+        lbl.append(sp);
+        td.append(lbl);
+        menuMeses.append(td);
+    }
+    let mes = document.getElementsByName("mes");
+    mes.forEach(radio => {
+        radio.addEventListener("change", function () {
+            mesChanged();
+        });
+    });
+}
+
+function incluyeDiaSemana(selectedMonth) {
+    const table = document.getElementById("resumenTable");
+    const thead = table.tHead;
+
+    // Prevent duplicates (optional)
+    const row = thead.querySelector(".extra-header");
+    if (row) row.remove();
+
+    if (selectedMonth>0 && selectedMonth<13){
+        const tr = thead.insertRow(0);
+        tr.classList.add("extra-header");
+        tr.setAttribute("background-color", "blue")
+        for (let i = 0; i <=32; i++) {
+            const th = document.createElement("th");
+            th.textContent = getWeekdaySpanish(anios.value, selectedMonth, i).substring(0,2);
+            tr.appendChild(th);
+        }
+    }
+}
+
+function mesChanged(){
+    let selectedMonth = document.querySelector('input[name="mes"]:checked').value;
+    for (const tr of resumen.rows){
+        tr.style.display = selectedMonth==13 ? '' : tr.id=="tr_mes_"+selectedMonth ? '' : 'none';
+    }
+    incluyeDiaSemana(selectedMonth);
+}
+
+async function selectDate(year, month, day){
+    //console.log(year, month, day);
+    if (anios.value != year){
+        anios.value = year;
+        await getYearSales();
+        applyHeatMap();
+        //console.log("Se cambio el anio");
+    }
+    document.querySelector(`input[name="mes"][value="${month}"]`).checked=true;
+    mesChanged();
+    tdId="#td_mes_"+month+"_dia_"+day;
+    //console.log(tdId)
+    let tdDay = document.querySelector(tdId);
+    if (tdDay.innerText!=''){
+        tdDay.click();
+    }
+    //alert(tdId);
+}
+
+function activateImprimir(){
+    if (window.thisRol=="maestro"){
+        const menuTicket  = document.getElementById("menuTicket");
+        menuTicket.style.display="";
+        //const btnMenuTicket = document.getElementById("btnMenuTicket");
+        btnMenuTicket.innerHTML="";
+        const detalles = document.getElementById("ventas-container");
+
+        btnMenuTicket.onclick = async function() {
+            let ventasActivar = [];
+            const prodCambiados = Array.from(
+                detalles.querySelectorAll('input.row-cancel:checked')
+            ).map(cb => cb.closest('tr'));
+            prodCambiados.forEach(tr => {
+                console.log(tr.dataset);
+                if (parseInt(tr.dataset.cancelada)==1){
+                    ventasActivar.push(tr.dataset);
+                }
+            });
+            console.log(ventasActivar);
+            if (ventasActivar.length>0){
+                //
+                //if (!confirm(`¿Activar o cancelar venta de ${ventasActivar.length} productos?`)) return;
+                openTicketModal(ventasActivar);
+            } else {
+                alert("No hay productos seleccionados para imprimir");
+            }
+        };
+    }
+}
+
+function activateCancelLogic(){
+    const btnCancel = document.getElementById("btn-cancel-mode");
+    const detalles = document.getElementById("ventas-container");
+
+    btnCancel.onclick = async function() {
+        let ventasActivar = [];
+        const prodCambiados = Array.from(
+            detalles.querySelectorAll('input.row-cancel:checked')
+        ).map(cb => cb.closest('tr'));
+        prodCambiados.forEach(tr => {
+            //console.log(tr.dataset);
+            ventasActivar.push(tr.dataset);
+        });
+        if (ventasActivar.length>0){
+            //console.log(ventasActivar);
+            if (!confirm(`¿Activar o cancelar venta de ${ventasActivar.length} productos?`)) return;
+            res = await myfetch("/ventas/activar", ventasActivar);
+            if (res.success){
+                await actualizaPagina(
+                    currentDate.year,
+                    currentDate.month,
+                    currentDate.day
+                );
+            } else {
+                centerMessage("Algunos productos no modificados");
+            }
+        } else {
+            alert("No hay cambios para cancelar o reactivar ventas");
+        }
+    };
+
+    detalles.querySelectorAll(".venta-checkbox").forEach(cb => {
+        cb.addEventListener("change", e => {
+            const ventaHeaderRow = cb.closest('tr');
+            //console.log(ventaHeaderRow.dataset.ventaId);
+            //console.log(`.venta-row[data-venta-id="${ventaHeaderRow.dataset.ventaId}"]`);
+            const ventaCheckboxes = detalles.querySelectorAll(`.venta-row[data-venta-id="${ventaHeaderRow.dataset.ventaId}"] input[type="checkbox"].row-cancel`); //
+            ventaCheckboxes.forEach( b => {
+                b.checked = cb.checked;
+                b.dispatchEvent(new Event("change", { bubbles: true }));
+            });
+        });
+    });
+
+    detalles.querySelectorAll(".row-cancel").forEach(cb => {
+        cb.addEventListener("change", e => {
+            const row = cb.closest(".venta-row");
+            const iniCancel = Number(row.dataset.cancelInitial) === 1;
+            row.dataset.cancelada = Number(cb.checked ? !iniCancel : iniCancel);
+            if (row.dataset.cancelada!=iniCancel){
+                row.style.fontWeight="bold";
+                row.style.textDecoration="underline";
+            } else {
+                row.style.fontWeight="";
+                row.style.textDecoration="";
+            }
+        });
+    });
+
+    document.querySelectorAll(".venta-row").forEach(row => {
+        if (Number(row.dataset.cancelInitial) === 1) {
+            row.classList.add("cancelled");
+        }
+    });
+}
+
+async function cargaVentasSemana(year, month, day){
+    res = await myfetch("/ventas/semana", {"anio": Number(year), "mes": Number(month), "dia":Number(day)});
+    //console.log(res);
+    if (res.success){
+        ventasSemana.innerHTML='';
+        //console.log(res.resultado);
+        for (const v of res.resultado.toReversed()){
+            //console.log(v);
+            let td = document.createElement("td");
+            td.classList.add("venta_semana");
+            td.innerHTML = getWeekdaySpanish(v.anio, v.mes, v.dia) +"<br/>"+ v.fecha + "<br/><b>$ " + v.subtotal+"</b>";
+            td.addEventListener("click", async function(){
+                //console.log(v.anio, v.mes, v.dia);
+                await displayDetallesDia(String(v.anio), String(v.mes), String(v.dia));
+                const cells = document.querySelectorAll('td.venta_semana');
+                cells.forEach(el => {
+                    el.classList.remove("active");
+                });
+                td.classList.add("active");
+            });
+            ventasSemana.append(td);
+        }
+        if (res.resultado.length>0){
+            r = res.resultado[0];
+            await displayDetallesDia(String(r.anio), String(r.mes), String(r.dia));
+        }
+    }
+}
+
+// function getCancelChanges(container) {
+//     const changes = [];
+
+//     container.querySelectorAll(".venta-row").forEach(row => {
+//         const initial = row.dataset.cancelInitial;
+//         const current = row.dataset.cancelCurrent ?? initial;
+
+//         if (initial !== current) {
+//             changes.push({
+//                 dispositivoId: row.dataset.dispositivoId,
+//                 ventaId: row.dataset.ventaId,
+//                 productoId: row.dataset.productoId,
+//                 tipoVentaId: row.dataset.tipoVentaId,
+//                 cancelada: current === "1"
+//             });
+//         }
+//     });
+
+//     return changes;
+// }
+
+async function actualizaPagina(year, month, day){
+
+    // update global state
+    currentDate.year = year;
+    currentDate.month = month;
+    currentDate.day = day;
+    //console.log(configDev);
+    if (window.thisRol == "maestro"){
+    //if (rol == "esclavo"){
+        //console.log(rol);
+        displayMenuMeses();
+        await getYearSales();
+        applyHeatMap();
+        await selectDate(year, month, day);
+        const elementos= document.querySelectorAll(`.ventas_anio`);
+        elementos.forEach( ele =>{
+            ele.classList.add("active");
+        });
+    } else if (window.thisRol == "esclavo"){
+    //} else if (rol == "maestro"){
+        //console.log("Soy escalvo");
+        let elementos= document.querySelectorAll(`.ventas_semana`);
+        elementos.forEach( ele =>{
+            ele.classList.add("active");
+        });
+        await cargaVentasSemana(year, month, day);
+        cambiaFechaVenta.style.display='none';
+    }
+}
+
+document.addEventListener("DOMContentLoaded", async () => {
+
+    const now = new Date();
+    const year  = now.getFullYear();   // e.g. 2025
+    const month = now.getMonth() + 1;  // 1–12  ⚠️ zero-based
+    const day   = now.getDate(); 
+    //console.log(year, month, day);
+
+    //console.log(currentDate);
+    for (let i=0; i<5; i++){
+        let opt = document.createElement("option");
+        opt.value=currentDate.year-i;
+        opt.textContent=currentDate.year-i;
+        anios.options.add(opt);
+    }
+    anios.addEventListener("change", async function(){
+        await getYearSales();
+        applyHeatMap();
+        //document.querySelector(`input[name="mes"][value="13"]`).checked=true;
+        mesChanged();
+    });
+
+    await actualizaPagina(currentDate.year, currentDate.month, currentDate.day);
+    if (window.thisRol == "maestro"){
+        activarCambiarFecha();
+    }
+
+    // build menu ONCE
+    //displayMenuMeses();
+});
+</script>
+<script src="{{ url_for('static', filename='js/helpers.js') }}" defer></script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+<HTML>
+<head>
+<title>VentaProductos</title>
+<meta
+  name="viewport"
+  content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
+/>
+<style>
+  html, body {
+    touch-action: manipulation;
+}
+</style>
+</head>
+<body>
+<script>const configDev = {{ configDev | tojson }};</script>
+
+    <div id="global-toolbar" style="background-color: black;"></div>
+    <div id="workspace" style="border: 0; padding: 0; width: 100%;"></div>
+    
+    <script src="{{ url_for('static', filename='js/helpers.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='js/workspace.js') }}" defer></script>
+</body>
+</HTML>

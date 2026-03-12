@@ -1,0 +1,160 @@
+#inputBuscador {
+  width: 100%;
+  padding: 8px;
+  font-size: 16px;
+}
+
+#inputBuscador:focus {
+  background-color: lightyellow ;
+}
+
+#btnBuscador {
+  padding: 8px;
+  font-size: 16px;
+}
+
+#inputCodigo {
+  padding: 8px;
+  font-size: 16px;
+}
+#inputCodigo:focus {
+  background-color: lightyellow ;
+}
+
+#btnBuscador {
+  padding: 8px;
+  font-size: 16px;
+}
+
+#btnCodigo {
+  padding: 8px;
+  font-size: 16px;
+}
+
+#btnArticulo {
+  padding: 8px;
+  font-size: 16px;
+}
+
+#btnComun {
+  padding: 8px;
+  font-size: 16px;
+}
+
+#btnCancelar {
+  padding: 8px;
+  font-size: 16px;
+}
+
+#tagsBuscador {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+#resultsBuscador {
+    /* table-layout: fixed;
+    border-collapse: collapse; 
+    border-collapse: collapse; 
+    height: 100px;
+    max-height: 100px; 
+    width: 100%;
+    display:block; 
+    max-height: 100px; 
+    height: 100px; */
+}
+
+#resultsBuscador td {
+  border: 1px solid #ddd;
+  /* padding: 1px; 
+  width: min-content; */
+}
+
+#resultsBuscador thead {
+  border-bottom: 2px solid #ccc;
+  top: 0px;
+    /* 
+  display:table-header-group;
+
+  border: 1px solid #ddd;
+  padding: 8px; */
+  position: sticky;   
+  background: white;   
+  /* z-index: 20;  */
+}
+
+#resultsBuscador thead th {
+  position: sticky;
+  top: 0;
+  background: rgb(199, 209, 221);   /* or match your theme */
+  /* z-index: 10; */
+}
+
+/* #resultsBuscador thead tr {
+     position: sticky;
+} */
+
+#resultsBuscador tbody {
+  /*  display:contents; 
+    
+  height: 100px;
+  max-height: 100px;
+  
+  display:flexbox;*/
+  overflow: auto;
+  width: 100%;
+}
+
+#resultsBuscador th::after {
+  content: " ⇅";
+  font-size: 0.8em;
+  color:rgba(237, 20, 20, 0.927);
+}
+
+.tag {
+  display: inline-block;
+  background: #111111;
+  border-radius: 4px;
+  padding: 3px 6px;
+  margin: 3px;
+  cursor: pointer;
+  white-space: nowrap;
+  color: #eeeeee;
+}
+
+.section-title {
+  font-weight: bold;
+  margin-right: 8px;
+}
+
+.tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: 6px;
+}
+
+.tags-section {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.tags-head {
+  background-color: aquamarine;
+}
+
+input#inputCodigo::-webkit-outer-spin-button,
+  input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+  }
+  /* Firefox */
+  input#inputCodigo[type=number] {
+      -moz-appearance: textfield;
+  }
+
+input.artComun:focus,
+textarea.artComun:focus,
+select.artComun:focus {
+    background-color: lightyellow ;
+}

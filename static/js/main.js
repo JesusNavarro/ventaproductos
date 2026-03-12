@@ -13,7 +13,13 @@ document.addEventListener("DOMContentLoaded", async () => {
   const device = (typeof context.APP_DEVICE !== "undefined" && context.APP_DEVICE) || 
              (/Android/i.test(navigator.userAgent) ? "Tablet" : "Mac");
 
-
+  // if (device=== "Tablet") {
+  //   let zoom_value = 1.5;
+  //   document.body.style.zoom = zoom_value;
+  //   const link = document.getElementById("ventasLink");
+  //   link.href = "/ventas/ventas_viewer.html?dias=7&zoom=" + zoom_value;
+  // }
+  
   //const APP_DEVICE = "{{ app_device }}" || (/Android/i.test(navigator.userAgent) ? "Tablet" : "Mac");
 
   const btnEscanear = document.getElementById("btn-escanear");
@@ -97,7 +103,7 @@ document.addEventListener("DOMContentLoaded", async () => {
               logDebug('Changed button to ', toggleBtn.innerText);
           });
 
-      } else {
+      } else if (device === "Mac"){
           // ✅ Load Html5Qrcode dynamically only for Mac
           logDebug('Camara JS', 'Mac');
           await loadScript("/static/js/html5-qrcode.min.js");
@@ -244,14 +250,14 @@ document.addEventListener("DOMContentLoaded", async () => {
                       cantidad: 1,
                       encontrado: true
                   });
-                  mensaje.innerText = ``;
+                  mensaje.innerHTML = ``;
                   actualizarTotales();
               } else {
-                  mensaje.innerText = `${barCode} Producto no encontrado`;
+                  mensaje.innerHTML = `${barCode} Producto no encontrado`;
               }
           })
           .catch(err => {
-              mensaje.innerText = "Error al comunicarse con el servidor";
+              mensaje.innerHTML = "Error al comunicarse con el servidor";
               logDebug( "Error al comunicarse con el servidor: "+err);
               console.error(err);
           });
@@ -319,34 +325,33 @@ document.addEventListener("DOMContentLoaded", async () => {
       const subtotal = prod.encontrado ? precio * prod.cantidad : 0;
 
       fila.innerHTML = `
-        <td><img src="static/imagenes/borrar_icon.jpg" class="borrar-btn" width="20" height="20" alt="Borrar"/></td>
-        <td class="barCode">${prod.barCode}</td>
-        <td width="100%">${prod.Descripcion}</td>
-        <td>
+        <td style="width: 1%;"><img src="static/imagenes/borrar_icon.jpg" class="borrar-btn" width="20" height="20" alt="Borrar"/></td>
+        <td style="width:auto%;">${prod.Descripcion}</td>
+        <!--td style="width: 1%;"-->
           <!--img src="static/imagenes/pieza_icon.jpg" width="20" height="20" alt="Pieza"/-->
           <!--img src="static/imagenes/paquete_icon.jpg" width="20" height="20" alt="Paquete"/-->
-        </td>
-        <td><input type="number" min="0" value="${prod.cantidad}" class="cantidad-input"
+        <!--/td-->
+        <td style="width: 1%;"><input type="number" min="0" value="${prod.cantidad}" class="cantidad-input"
             onchange="window.cambiarCantidad('${prod.barCode}', this)" style="width:80px;font-weight:bold;"/>
         </td>
-        <td>
+        <td style="width: 1%;">
           <img src="static/imagenes/up_icon.jpg" class="arrow-up" width="20" height="20" alt="Uno más"/>
         </td>
-        <td>
+        <td style="width: 1%;">
           <img src="static/imagenes/down_icon.jpg" class="arrow-down" width="20" height="20" alt="Uno menos"/>
         </td>
-        <td class="celda_ocultable">${precio.toFixed(2)}</td>
-        <td class="celda_ocultable">
-          <input type="number" value="${precio.toFixed(2)}" class="precio-input" min="0"
+        <!--td class="celda_ocultable" style="width: 1%;">${precio.toFixed(2)}</td-->
+        <td class="celda_ocultable" style="width: 1%;">
+          <input type="number" value="${precio.toFixed(2)}" placeholder="${precio.toFixed(2)}" class="precio-input" min="0"
             onchange="window.cambiarPrecio('${prod.barCode}', this)" style="width:80px;font-weight:bold;"/>
         </td>
-        <td class="celda_ocultable">
+        <td class="celda_ocultable" style="width: 1%;">
           <img src="static/imagenes/plus_icon.jpg" class="plus-btn" width="20" height="20" alt="Subir precio"/>
         </td>
-        <td class="celda_ocultable">
+        <td class="celda_ocultable" style="width: 1%;">
           <img src="static/imagenes/minus_icon.jpg" class="minus-btn" width="20" height="20" alt="Bajar precio"/>
         </td>
-        <td class="celda_ocultable subtotal-cell">${subtotal.toFixed(2)}</td>
+        <td class="celda_ocultable subtotal-cell" style="width: 1%;">${subtotal.toFixed(2)}</td>
       `;
 
       tabla_tbody.appendChild(fila);
@@ -386,10 +391,15 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (prod && prod.encontrado) {
           let nuevoPrecio = parseFloat(precioInput.value) || 1;
           prod.PrecioVenta = nuevoPrecio;
-          if (nuevoPrecio<prod.Precio){
-            precioInput.style.color="red";
-          } else {
+          if (nuevoPrecio==prod.Precio){
             precioInput.style.color="black";
+            precioInput.style.backgroundColor="#ffffff";
+          } else if (nuevoPrecio<prod.Precio){
+            precioInput.style.color="red";
+            precioInput.style.backgroundColor="#ffffe0";
+          } else {
+            precioInput.style.color="green";
+            precioInput.style.backgroundColor="#ffffe0";
           }
           actualizarTotales();
           //toggleColumnas(mostrarCeldasOcultas);
@@ -409,7 +419,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           }));
 
       if (ventasAguardar.length === 0) {
-          mensaje.innerText = "No hay productos válidos para guardar.";
+          mensaje.innerHTML = "No hay productos válidos para guardar.";
           playErrorSound();
           return;
       }
@@ -422,16 +432,16 @@ document.addEventListener("DOMContentLoaded", async () => {
           .then(res => res.json())
           .then(data => {
               if (data.estado === "exito") {
-                  mensaje.innerText = "✅ Venta guardada correctamente";
+                  mensaje.innerHTML= `<font color="green">✅ Venta guardada correctamente <font size="5">$ ${data.total_venta}</font></font>`;
                   playSuccessSound();
                   eliminarVenta();
               } else {
-                  mensaje.innerText = `❌ Error al guardar: ${data.mensaje}`;
+                  mensaje.innerHTML = `❌ Error al guardar: ${data.mensaje}`;
                   playErrorSound();
               }
           })
           .catch(err => {
-              mensaje.innerText = "⚠️ Error al guardar venta";
+              mensaje.innerHTML = "⚠️ Error al guardar venta";
               playErrorSound();
           });
   }
@@ -521,7 +531,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
     actualizarTotales();
     actualizarVisibilidadBotones();
-    mostrarCeldasOcultas = false;
+    mostrarCeldasOcultas = true;
   }
 
 
@@ -642,10 +652,15 @@ document.addEventListener("DOMContentLoaded", async () => {
         const producto = productosVenta.find(p => p.barCode === codigo);
         if (producto) {
           producto.PrecioVenta = val;
-          if (producto.Precio>val){
-            precioInput.style.color = "red";
-          } else {
+          if (producto.Precio==val){
             precioInput.style.color = "black";
+            precioInput.style.backgroundColor="#ffffff";
+          } else if (producto.Precio>val){
+            precioInput.style.color = "red";
+            precioInput.style.backgroundColor="#ffffe0";
+          } else {
+            precioInput.style.color = "green";
+            precioInput.style.backgroundColor="#ffffe0";
           }
         }
         actualizarTotales();
@@ -658,10 +673,15 @@ document.addEventListener("DOMContentLoaded", async () => {
         const producto = productosVenta.find(p => p.barCode === codigo);
         if (producto) {
           producto.PrecioVenta = val;
-          if (producto.Precio>val){
-            precioInput.style.color = "red";
-          } else {
+          if (producto.Precio==val){
             precioInput.style.color = "black";
+            precioInput.style.backgroundColor="#ffffff";
+          } else if (producto.Precio>val){
+            precioInput.style.color = "red";
+            precioInput.style.backgroundColor="#ffffe0";
+          } else {
+            precioInput.style.color = "green";
+            precioInput.style.backgroundColor="#ffffe0";
           }
         }
         actualizarTotales();

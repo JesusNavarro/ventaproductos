@@ -1,0 +1,332 @@
+<html>
+<head>
+<meta
+  charset="UTF-8"
+  name="viewport"
+  content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
+/>
+<style>
+html, body {
+    touch-action: manipulation;
+    background-color: #F7F7F7;
+    }
+</style>
+</head>
+<body>
+    Direccion IP de este dispositivo: <div id="thsiIPDiv"></div><br/><br/>
+    <div id="mensajeRegistro"></div>
+    REGISTRO DISPOSITIVO
+    <br/>
+    <table>
+        <tr>
+            <td rowspan="2"> <!-- REGISTRO DISPOSITIVOS -->
+                <table border="1" class="zebra">
+                    <tr>
+                        <td>ID Dispositivo</td><td><input type="text" id="dispositivoId"/> Dejar en blanco para este dispositivo</td>
+                    </tr>
+                    <tr>
+                        <td>Direccion IP</td><td><input type="text" id="direccionIP"/> Dejar en blanco para este dispositivo</td>
+                    </tr>
+                    <tr>
+                        <td>Nombre</td><td><input type="text" id="nombre"/></td>
+                    </tr>
+                    <tr>
+                        <td>Registro</td>
+                        <td><select id="rol">
+                            <option id="maestro" value="maestro">Maestro</option>
+                            <option id="esclavo" value="esclavo">Esclavo</option>
+                        </select></td>
+                    </tr>
+                    <tr>
+                        <td>Este dispositivo</td><td><input type="checkbox" id="soy" value="Este dispositivo"/></td>
+                    </tr>
+                    <tr>
+                        <td colspan="2" align="center"><input id="guardarRegistro" type="button" value="Guardar"/></td>
+                    </tr>
+                </table>
+                <BR/><BR/>
+                DISPOSITIVOS REGISTRADOS 
+                <BR/>
+                <table id="registros" border="1" class="zebra">
+                </table>
+            </td>
+            <td style="vertical-align: top;">   <!-- sincronizar inventario -->
+                <div id="syncDiv"></div>
+            </td>
+            <td id="variableContainer" style="vertical-align: top; display: none;"> <!-- variables -->
+                VARIABLES<BR/><BR/>
+            </td>
+        </tr>
+
+    </table>
+
+<script>
+const configDev = {{ configDev | tojson }};
+const thisIP = {{ thisIP | tojson}};
+
+function addVarsTableRow({ variable = "", valor = "", desde = "" }) {
+    const tbody = document.querySelector("#varsTable tbody");
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+            <td><input type="text" class="var-name" value="${variable}"></td>
+            <td><input type="text" class="var-value" value="${valor}"></td>
+            <td><input type="date" class="valid-from"  value="${desde}"></td>
+            <td><button class="save-btn">Guardar</button></td>
+            <td><button class="delete-btn">Borrar</button></td>
+        `;
+    //tr.append(tdVar, tdVal, tdDesde, tdSave, tdDelete);
+    tbody.appendChild(tr);
+}
+
+async function getConfigVariables(){
+    const tbody = document.querySelector("#varsTable tbody");
+    tbody.innerHTML='';
+    res = await myfetch("/ajustes/all");
+    console.log(res);
+    if (res && res.success && res.resultado && res.resultado.length > 0) {
+        res.resultado.forEach(item => {
+        addVarsTableRow({
+                variable: item.variable,
+                valor: item.valor,
+                desde: item.desde
+            });
+        });
+    }
+}
+
+function showConfigVariablesUI(container = document.body) {
+    // Prevent duplicate creation
+    //if (document.getElementById("varsTable")) return;
+
+    // --- Add button ---
+    const addBtn = document.createElement("button");
+    addBtn.id = "addRowBtn";
+    addBtn.textContent = "Agregar variable";
+
+    // --- Line break ---
+    const br = document.createElement("br");
+
+    // --- Table ---
+    const table = document.createElement("table");
+    table.id = "varsTable";
+    table.border = "1";
+    table.cellPadding = "6";
+
+    table.innerHTML = `
+        <thead>
+            <tr>
+                <th>Variable</th>
+                <th>Valor</th>
+                <th>Valida desde</th>
+                <th>Guardar</th>
+                <th>Borrar</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    `;
+
+    // Append everything
+    container.appendChild(addBtn);
+    container.appendChild(br);
+    container.appendChild(table);
+
+    // Attach behavior
+    wireConfigVariablesEvents();
+}
+
+function wireConfigVariablesEvents() {
+    const addBtn = document.getElementById("addRowBtn");
+    const tbody = document.querySelector("#varsTable tbody");
+
+    addBtn.addEventListener("click", () => {
+        const tr = document.createElement("tr");
+
+        tr.innerHTML = `
+            <td><input type="text" class="var-name"></td>
+            <td><input type="text" class="var-value"></td>
+            <td><input type="date" class="valid-from"></td>
+            <td><button class="save-btn">Guardar</button></td>
+            <td><button class="delete-btn">Borrar</button></td>
+        `;
+
+        tbody.appendChild(tr);
+    });
+
+    tbody.addEventListener("click", async (e) => {
+        const row = e.target.closest("tr");
+        if (!row) return;
+
+        const name = row.querySelector(".var-name")?.value.trim();
+        const value = row.querySelector(".var-value")?.value.trim();
+        const validFrom = row.querySelector(".valid-from")?.value;
+
+        if (e.target.classList.contains("save-btn")) {
+            if (!confirm(`¿Modificar ${name}?`)) return;
+            res = await myfetch("/ajustes/guardar", { "variable":name, "valor":value, "desde":validFrom });
+            if (res.success){
+                centerMessage("Se guardo "+name);
+                getConfigVariables();
+            } else {
+                centerMessage("No se guardo "+name);
+            }
+        }
+
+        if (e.target.classList.contains("delete-btn")) {
+            if (!confirm(`¿Borrar ${name}?`)) return;
+            res = await myfetch("/ajustes/borrar", {  "variable":name, "desde":validFrom });
+            if (res.success){
+                centerMessage("Se borro "+name);
+                //row.remove();
+                getConfigVariables();
+            } else {
+                centerMessage("No se guardo "+name);
+            }
+        }
+    });
+}
+
+async function sincronizaInventario(){
+    centerMessage("Descargando inventario", true);
+    let res = await myfetch("/pull/db/maestro", null, 60000);
+    //alert(JSON.stringify(res));
+    centerMessage("Descargando inventario", false);
+    if (res && res.success){
+        centerMessage("Inventario descargado", 2);
+    } else {
+        centerMessage("No se pudo descargar el inventario"+res.error, 2);
+    }
+}
+
+function checkRegistroIP(){
+    console.log(thisIP);
+    console.log(configDev);
+    if (configDev && configDev["MS_SOY"] && thisIP!=configDev["MS_SOY"]["direccionIP"]){
+        mensajeRegistro = document.getElementById("mensajeRegistro");
+        mensajeRegistro.style.color = "red";
+        mensajeRegistro.innerHTML = '<b>Ventas, inventario, etc. funciona bien, solo no se puede pasar ventas de un dispositivo a otro</b>';
+        mensajeRegistro.innerHTML += `<br/>La direccion IP de este dispositivo cambio a ${thisIP}`;
+        mensajeRegistro.innerHTML += '<br/>Debe actualizarse en ambos dispositivos para que puedan comunicarse';
+        mensajeRegistro.innerHTML += '<br/>Y reiniciar la aplicacion en cada uno de ellos<br/><br/>';
+    } else {
+        mensajeRegistro.innerHTML='';
+    }
+}
+
+document.addEventListener("DOMContentLoaded", async () => {
+
+    const thsiIPDiv =  document.getElementById("thsiIPDiv");
+    thsiIPDiv.textContent = thisIP;
+    const guardarResgistro = document.getElementById("guardarRegistro");
+    const dispositivoId = document.getElementById("dispositivoId");
+    const nombre = document.getElementById("nombre");
+    const rol = document.getElementById("rol");
+    const direccionIP = document.getElementById("direccionIP");
+    const soy = document.getElementById("soy");
+    const registros = document.getElementById("registros");
+
+    guardarResgistro.addEventListener("click", async () => {
+        let registro = {};
+        registro.dispositivoId = dispositivoId.value.trim();
+        registro.direccionIP = direccionIP.value.trim();
+        registro.nombre = nombre.value.trim()
+        registro.rol = rol.value.trim();
+        registro.soy = soy.checked;
+        //alert(JSON.stringify(registro));
+        // registro.masterId = masterId;
+        // registro.masterIP = masterIP;
+        
+        res = await myfetch("/registro/set", registro);
+        console.log(res);
+        if (res && res.success && res["dispositivoId"]){
+            regDispositivoId = res["dispositivoId"];
+            dispositivoId.value = regDispositivoId;
+            if (registro.soy){
+                direccionIP.value=res["direccionIP"];
+            }
+            getRegistros();
+        } else {
+            centerMessage("Registro no realizado");
+        }
+    });
+
+    async function getRegistros(){
+        checkRegistroIP();
+        res = await myfetch("/registro/all");
+        //console.log(res);
+        if (res && res.success && res.resultado && res.resultado.length > 0) {
+            registros.innerHTML = '';
+            r = registros.insertRow();
+            r.insertCell().innerHTML = 'Dispositivo Id';
+            r.insertCell().innerHTML = 'Direccion IP';
+            r.insertCell().innerHTML = 'Nombre';
+            r.insertCell().innerHTML = 'Registro como';
+            r.insertCell().innerHTML = 'Este dispositivo';
+            r.insertCell().innerHTML = 'Modificar';
+            res.resultado.forEach(ele => {
+                r = registros.insertRow();
+                r.insertCell().innerHTML = ele.dispositivoId;
+                let c = r.insertCell();
+                let i = document.createElement("input");
+                i.setAttribute("type", "text");
+                i.style.width = "200px";
+                i.id= ele.dispositivoId;
+                i.value = ele.direccionIP;
+                c.appendChild(i);
+                r.insertCell().innerHTML = ele.nombre;
+                r.insertCell().innerHTML = ele.rol;
+                r.insertCell().innerHTML = ele.soy ? '<b>Si</b>' : 'No';
+                c = r.insertCell();
+                b = document.createElement("button");
+                b.id=`Modifica_${ele.dispositivoId}`;
+                b.value='Modificar';
+                b.textContent='Modificar';
+                c.appendChild(b);
+                b.addEventListener("click", async function() {
+                    res = await myfetch("/registro/modificar", {"dispositivoId": ele.dispositivoId, "direccionIP": i.value.trim()})
+                    if (res.success){
+                        window.location.reload();
+                    } else {
+                        centerMessage("No se pudo modificar "+ele.nombre);
+                    }
+                });
+                if (ele.soy){
+                    soy.checked = false;
+                    soy.disabled = true;
+                }
+                if (ele.rol == "maestro"){
+                    rol.remove(0);
+                }
+
+            });
+        }
+    }
+
+    getRegistros();
+
+    let rolConfig;
+    if (configDev){
+        if (configDev["MS_SOY"]){
+            rolConfig = configDev["MS_SOY"]["rol"];
+            if (rolConfig && rolConfig=="esclavo") {
+                if (configDev["MS_MAESTROS"] && configDev["MS_MAESTROS"].length>0){
+                    let  mydiv = document.getElementById("syncDiv");
+                    let getCopiaMaestro = document.createElement("button");
+                    getCopiaMaestro.textContent="Sincronizar inventario";
+                    getCopiaMaestro.addEventListener("click", async function(){
+                        sincronizaInventario();
+                    });
+                    mydiv.appendChild(getCopiaMaestro);
+                }
+            } else if (rolConfig && rolConfig=="maestro"){
+                let variableContainer = document.getElementById("variableContainer");
+                variableContainer.style.display="block";
+                showConfigVariablesUI(variableContainer);
+                getConfigVariables();
+            }
+        }
+    }
+});
+</script>
+<script src="{{ url_for('static', filename='js/helpers.js') }}" defer></script>
+</body>
+</html>

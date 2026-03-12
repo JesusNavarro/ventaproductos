@@ -1,0 +1,1870 @@
+<html>
+<head>
+    <style>
+        html * {
+            font-size: 1em !important;
+            /*color: #000;
+             !important */
+            font-family: Arial !important;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+        }
+        html, body {
+                touch-action: manipulation;
+                background-color: #F7F7F7;
+        }
+        input:focus,
+        textarea:focus,
+        select:focus {
+            background-color: lightyellow ;
+        }
+        table {
+            border-collapse: collapse;
+        }
+        table td {
+            padding-left: 10px;
+            padding-right: 10px;
+            vertical-align: center;
+        }
+        #tabla_ventas_creadas td {
+            border: 1px solid black;
+            padding: 5px;
+            width: auto;
+            vertical-align: top;
+        }
+        input[type=number] {
+            display: inline-block;
+            margin-bottom: 4px;
+            width: 100px;
+            size: 6;
+            -moz-appearance: textfield;
+        }
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type=text] {
+            display: inline-block;
+            vertical-align: top;
+            width: auto;
+            min-width: 400px;
+        }
+        input:disabled {
+            border-style: dotted;
+        }
+        input[type=checkbox] {
+            accent-color: lightgreen;
+        }
+        input[type="checkbox"]:checked {
+            outline: 2px solid green;
+        }
+        label {
+            display: inline-block;
+            padding-top: 4px;
+            padding-bottom: 4px;
+        }
+        label:has(input[type="radio"]:checked) {
+            background-color: lightblue;
+            font-weight: bold;
+        }
+        select {
+            display: inline-block;
+            margin-bottom: 4px;
+            min-width: 90px;
+        }
+        .titulo {
+            text-align: right;
+            width: 120px;
+            min-width: 120px;
+            max-width: 170px;
+            vertical-align: top;
+            padding-top: 4px;
+            padding-bottom: 4px;
+        }
+        th {
+            background-color: rgb(160, 181, 221);
+            text-align: left;
+            text-shadow: #ccc 3px 3px 3px;
+            padding-top: 5px;
+            padding-bottom: 5px;
+            padding-left: 10px;
+        }
+        .radioLabel {
+            display: block;
+            border: 1px solid #ccc;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            text-align: center;
+            cursor: pointer;
+        }
+        #pageOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            backdrop-filter: grayscale(0.3); /* opacity(1); */
+            /* backdrop-filter: blur(1px); */
+            /* optional */
+            z-index: 9999;
+            /* above page */
+            pointer-events: auto;
+            /* block clicks */
+            display: none;
+            /* hidden by default */
+        }
+        input[tabindex="0"] {
+            border-color: rgb(1, 140, 66);
+            /* Replace 'yourColor' with the desired color */
+            border-style: groove;
+            border-bottom-style: dashed;
+        }
+        /* Elements that should remain clickable */
+        .allow-interaction {
+            position: relative;
+            z-index: 10000 !important;
+            background: '';
+            backdrop-filter: none !important;
+        }
+        .blink-caret {
+            display: inline-block;
+            background-color: rgb(41, 185, 38) !important;  
+            animation: blink 1s step-end infinite;  
+        }
+        #notActivo {
+            accent-color: gray;
+            border: none;
+        }
+        #notActivo:checked {
+            accent-color: red;
+        }
+        .accesible {
+            font-size: 1.5em !important;           /* scale everything */
+            /* background-color: #fff7cc;   light yellow for contrast */
+        }
+        .accesible td {
+            padding: 12px;
+        }
+        .accesible input {
+            font-size: 1.2em !important;
+            font-weight: 900 !important;
+            color: #000 !important;
+            border: 3px solid #000 !important;
+        }
+        input.accesible {
+            font-size: 1.5em !important;
+            font-weight: 900 !important;
+            color: #000 !important;
+            border: 2px solid #000 !important;
+        }
+
+        /* .blink-caret {
+            display: inline-block;
+            width: 10px;  Width of the blinking cursor
+            background-color: rgb(60, 43, 155);  Cursor color 
+            animation: blink 1s step-end infinite;  Blinking effect 
+        }
+
+         @keyframes blink {
+            95% {
+                opacity: 0; Cursor disappears 
+            }
+        } */
+    </style>
+</head>
+
+<body  tabindex="-1">
+    <div id="pageOverlay"></div><br/>
+    <table style="width: 100%; border: none;" class="allow-interaction">
+        <tbody id="buscadorProducto"></tbody>
+    </table>
+    <table width="100%" border="0" style="padding: 15px;">
+        <!-- <tr>
+            <td colspan="2">
+                <table width="100%" class="allow-interaction">
+                    <tr>
+                        <td width="100%"><br />
+                            <table border="0" style="width: 100%;">
+                                <tbody id="buscadorProducto"></tbody>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr> -->
+        <tr>
+            <td colspan="2" style="min-height: 30px; height: 15px;" id="mensajes" class="allow-interaction">
+            </td>
+        </tr>
+        <tr>
+            <td style="vertical-align: top; height: 100%; display: inline-block; width: max-content;" width="100%">
+                <table border="0" width="100%">
+                    <tr>
+                        <td>
+                            <table id="tabla_producto" border="0" width="100%">
+                                <tr>
+                                    <th colspan="1">Producto <label id="productoId"></label></th>
+                                    <th colspan="2" style="text-align: right;">Ultimo cambio <label
+                                            id="modifiedDate"></label>&nbsp;</th>
+                                    <th>
+                                        Desactivado
+                                        <input type="checkbox" id="notActivo" value="notActivo"
+                                            tabindex="-1">&nbsp;&nbsp;
+                                    </th>
+                                </tr>
+                                <tr>
+                                    <td class="titulo">
+                                        <div id="semaforoEstado" style="background-color: red; display: inline-block;">&nbsp;&nbsp;&nbsp;&nbsp;</div>&nbsp;Barras
+                                    </td>
+                                    <td><input type="text" id="codigoBarras" data-allow-scanner
+                                            placeholder="(F10 Para pegar) Se genera uno si esta vacio" autocomplete="off"/></td>
+                                    <td class="titulo">Codigo</td>
+                                    <td> <input id="codigoNumerico" type="number" placeholder="47583" autocomplete="off"/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="titulo">Claves</td>
+                                    <td> <input id="claves" type="text" placeholder="Ejemplo: ART75" autocomplete="off"/>
+                                    <td class="titulo">
+                                        Proveedor
+                                    </td>
+                                    <td>
+                                        <select name="proveedorId" id="proveedorId" tabindex="-1">
+                                        </select>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="titulo">Descripcion </td>
+                                    <td><input id="descripcion" type="text"
+                                            style="width: 100%; font-weight: bold;" autocomplete="off"/>
+                                    </td>
+                                    <td class="titulo">
+                                        Venta Preferida
+                                    </td>
+                                    <td>
+                                        <select id="preferenciaVenta" tabindex="-1">
+                                        </select>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="vertical-align: top; height: 100%;">
+                            <table id="tabla_ventas_fijas" border="0" width="100%%">
+                                <colgroup>
+                                    <col>
+                                    <col id="colUnidad">
+                                    <col id="colPaquete">
+                                    <col id="colKg">
+                                </colgroup>
+                                <tr>
+                                    <th colspan="3">Costo</th>
+                                    <th rowspan="2">
+                                        <input type="number" style="width: 80px;" tabindex="-1"
+                                            id="calcPiezas" autocomplete="off"/>&nbsp;piezas son<br />
+                                        <input type="number" style="width: 80px;" tabindex="-1"
+                                            id="calcGramos" autocomplete="off"/>&nbsp;gramos
+                                    </th>
+                                </tr>
+                                <tr>
+                                    <td class="titulo" style="padding-top: 10px; padding-bottom: 10px;">Compra por
+                                    </td>
+                                    <td>
+                                        <label class="radioLabel" tabindex="0">
+                                            <input type="radio" name="seCompraPor" id="seCompraPorUnidad" value="unidad"
+                                                tabindex="-1" style="display: none;" />
+                                            <b><span name="lblUnidadCompra">Pieza</span></b>
+                                        </label>
+                                    </td>
+                                    <td>
+                                        <label class="radioLabel" tabindex="0">
+                                            <input type="radio" name="seCompraPor" id="seCompraPorPaquete"
+                                                value="paquete" tabindex="-1" style="display: none;" />
+                                            <b><span id="lblSeCompraPorPaquete">Paquete</span></b>
+                                        </label>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="titulo">Contenido</td>
+                                    <td></td>
+                                    <td style="vertical-align: top; white-space: nowrap;">
+                                        <input id="numeroUnidades" type="number"
+                                            style="vertical-align: top;padding-right: 10px;" autocomplete="off"/>
+                                        <select name="unidadInv" id="unidadInv" style="width:30px;">
+                                            <option value="pieza" selected="selected">Piezas</option>
+                                            <option value="metro">Metros</option>
+                                            <option value="litro">Litros</option>
+                                        </select>
+                                    </td>
+                                    <td style="vertical-align: top; white-space: nowrap;">
+                                        <input id="numeroKgs" type="number" style="padding-right: 10px;" autocomplete="off"/> kgs
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td></td>
+                                    <td style="vertical-align: top; white-space: nowrap;">
+                                        <b><label id="descUnidadCompra">1 Pieza</label></b>
+                                    </td>
+                                    <td style="vertical-align: top; white-space: nowrap;">
+                                        <b><label name="descVentaPaquete" id="descVentaPaquete"></label></b>
+                                    </td>
+                                    <td style="vertical-align: top; white-space: nowrap;">
+                                        <label id="kilogramLbl"><b>1 Kg</b></label>
+                                        <br /><label id="piezasPorKilo"></label>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="titulo">Costo Sin IVA</td>
+                                    <td><input id="costoSinIvaUnidad" type="number" autocomplete="off"/></td>
+                                    <td><input id="costoSinIvaPaquete" type="number" autocomplete="off"/></td>
+                                    <td><input id="costoSinIvaKg" type="number" disabled="disabled" autocomplete="off"/></td>
+                                </tr>
+                                <tr>
+                                    <td class="titulo">IVA (<span id="ivaLabel"></span>%)</td>
+                                    <td><input id="costoIvaUnidad" type="number" disabled="disabled" autocomplete="off"/> </td>
+                                    <td><input id="costoIvaPaquete" type="number" disabled="disabled" autocomplete="off"/></td>
+                                    <td><input id="costoIvaKg" type="number" disabled="disabled" autocomplete="off"/></td>
+                                </tr>
+                                <tr id="costoTr">
+                                    <td class="titulo">Costo Con IVA</td>
+                                    <td><input id="costoConIvaUnidad" type="number"
+                                            style="font-weight: bold; color: blue;" autocomplete="off"/></td>
+                                    <td><input id="costoConIvaPaquete" type="number"
+                                            style="font-weight: bold;  color: blue;" autocomplete="off"/></td>
+                                    <td><input id="costoConIvaKg" type="number" disabled="disabled"
+                                            style="font-weight: bold;  color: blue;" autocomplete="off"/></td>
+                                </tr>
+                                <tr>
+                                    <th colspan="2">Venta</th>
+                                    <th colspan="2" style="text-align: right; padding-right: 10px;">
+                                        <label id="ultimaVenta">28 Nov 2025</label>
+                                    </th>
+                                </tr>
+                                <tr id="precioTr">
+                                    <td class="titulo">Precio</td>
+                                    <td><input id="precioUnidad" type="number"
+                                            style="font-weight: bold;  color: blue;" autocomplete="off"/></td>
+                                    <td><input id="precioPaquete" type="number"
+                                            style="font-weight: bold;  color: blue;" autocomplete="off"/></td>
+                                    <td><input id="precioKg" type="number" style="font-weight: bold; color: blue;" autocomplete="off"/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="titulo">Ganancia</td>
+                                    <td><label id="gananciaUnidad"></label></td>
+                                    <td><label id="gananciaPaquete"></label></td>
+                                    <td><label id="gananciaKg"></label></td>
+                                </tr>
+                                <tr>
+                                    <td class="titulo" style="padding-top: 8px; padding-bottom: 8px;">¿Se vende?</td>
+                                    <td><input type="checkbox" id="muestraUnidad" value="muestraUnidad" disabled />A la
+                                        venta</td>
+                                    <td><input type="checkbox" id="muestraPaquete" value="muestraPaquete" disabled />A
+                                        la venta</td>
+                                    <td><input type="checkbox" id="muestraKg" value="muestraKg" disabled />A la venta
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th colspan="4">Inventario </th>
+                                </tr>
+                                <!-- <tr>
+                                    <td class="titulo">Existencia</td>
+                                    <td><input type="number" id="existenciaAnteriorUnidades" value="0" disabled /><label
+                                            name="lblUnidades">piezas</label></td>
+                                    <td><input type="number" id="existenciaAnteriorPaquetes" value="0" disabled /><label
+                                            name="lblPaquetes">paquetes</label></td>
+                                    <td><input type="number" id="existenciaAnteriorKgs" value="0" disabled /><label
+                                            name="lblKgs">kgs</label></td>
+
+                                </tr> -->
+                                <!-- <tr>
+                                    <td class="titulo">Llegaron</td>
+                                    <td><input id="llegaronUnidad" type="number" />&nbsp;<label
+                                            name="lblUnidades">piezas</label></td>
+                                    <td><input id="llegaronPaquete" type="number" />&nbsp;<label
+                                            name="lblPaquetes">paquetes</label></td>
+                                    <td><input id="llegaronKg" type="number" disabled />&nbsp;<label
+                                            name="lblKgs">kgs</label></td>
+                                </tr> -->
+                                <tr>
+                                    <td class="titulo">Existencia</td>
+                                    <td><input id="existenciaUnidades" type="number"
+                                            style="color: blue; font-weight: bold;" autocomplete="off"/>&nbsp;<label
+                                            name="lblUnidades">piezas</label></td>
+                                    <td><input id="existenciaPaquetes" type="number"
+                                            style="color: blue;  font-weight: bold;" autocomplete="off"/>&nbsp;<label
+                                            name="lblPaquetes">paquetes</label></td>
+                                    <td><input id="existenciaKgs" type="number"
+                                            style="color: blue;  font-weight: bold;" autocomplete="off" disabled />&nbsp;<label
+                                            name="lblKgs">kgs</label></td>
+                                </tr>
+                                <tr>
+                                    <td class="titulo">Minimo</td>
+                                    <td><input id="minimoUnidades" type="number" value="0" autocomplete="off"/>&nbsp;<label
+                                            name="lblUnidades">piezas</label></td>
+                                    <td><input id="minimoPaquetes" type="number" value="0" autocomplete="off"/>&nbsp;<label
+                                            name="lblPaquetes">paquetes</label></td>
+                                    <td><input id="minimoKgs" type="number" value="0" autocomplete="off"/>&nbsp;<label
+                                            name="lblKgs">kgs</label></td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+            <td style="vertical-align: top; height: 100%; display:inline-flexbox; width: 100%;">
+                <table width="100%" height="100%" style="vertical-align: top; height: 100%;">
+                    <tr id="trInfoAdicional">
+                        <td>
+                            <table border="0" width="100%" height="100%">
+                                <tr>
+                                    <th>Informacion Adicional</th>
+                                </tr>
+                                <tr>
+                                    <td height="120px;" style="vertical-align: top;">
+                                        <a href="" target="_blank" id="ligaProductoTruper" style="display: none;"></a>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <table border="1" width="100%" height="100%" class="allow-interaction" style="display: none;">
+                                <tr>
+                                    <th>Vista Previa
+                                    </th>
+                                </tr>
+                                <tr>
+                                    <td height="120px;" style="vertical-align: top;">
+                                        <table border="1" id="ventaProductoViewer" width="100%"></table>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <table border="0" width="100%" height="100%">
+                                <tr>
+                                    <th>Imagen</th>
+                                </tr>
+                                <tr>
+                                    <td height="120px;" class="allow-interaction" id="tdImagen"></td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <table border="0" width="100%" height="100%">
+                                <tr>
+                                    <th>Resumen del producto</th>
+                                </tr>
+                                <tr>
+                                    <td>Resumen</td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+        <tr>
+            <td align="center"><br />
+                <input type="button" id="btnGuardar" value="Guardar cambios" width="100%"
+                    style="background-color: gold; display: none;" class="allow-interaction" />
+                <br /><br /><br />
+            </td>
+            <td>
+
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2">
+                <table id="tabla_ventas_creadas" width="100%" style="display: none;">
+                    <tr>
+                        <th width="100%" colspan="8">Ventas Creadas</th>
+                        <th width="100%" colspan="2">Agregar Venta</th>
+                    </tr>
+                    <tr>
+                        <td>Se muestra</td>
+                        <td>Cantidad</td>
+                        <td>Unidad</td>
+                        <td>Descripcion</td>
+                        <td>Costo Sin Iva</td>
+                        <td>Iva (<label id="venta_1_factor_iva" title="16%"></label>)</td>
+                        <td>Costo Con Iva</td>
+                        <td>Precio</td>
+                        <td>Ganancia</td>
+                        <td>Eliminar</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <input type="checkbox" id="ventacreada_muestra_1" name="ventacreada_muestra_1"
+                                value="activo" checked="checked" tabindex="-1" />
+                        </td>
+                        <td>
+                            <input id="ventacreada_cantidad_1" type="number" tabindex="-1" autocomplete="off"/>
+                        </td>
+                        <td>
+                            <input id="ventacreada_unidad_1" type="number" tabindex="-1" autocomplete="off"/>
+                        </td>
+                        <td>
+                            <input id="ventacreada_descripcion_1" type="text" value="Paquete" tabindex="-1"autocomplete="off" />
+                        </td>
+                        <td>
+                            <input id="ventacreada_costosiniva_1" type="number" tabindex="-1" autocomplete="off"/>
+                        </td>
+                        <td>
+                            <input id="ventacreada_costoiva_1" type="number" tabindex="-1" autocomplete="off"/>
+                        </td>
+                        <td>
+                            <input id="ventacreada_costoconiva_1" type="number" tabindex="-1" autocomplete="off"/>
+                        </td>
+                        <td>
+                            <input id="ventacreada_precio_1" type="number" tabindex="-1" autocomplete="off"/>
+                        </td>
+                        <td>
+                            <input id="ventacreada_ganancia_1" type="number" tabindex="-1" autocomplete="off"/>
+                        </td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <input type="checkbox" id="ventacreada_muestra_2" value="activo" checked="checked"
+                                tabindex="-1" />
+                        </td>
+                        <td>
+                            <input id="ventacreada_cantidad_2" type="number" tabindex="-1" autocomplete="off"/>
+                        </td>
+                        <td>
+                            <input id="ventacreada_unidad_2" type="number" tabindex="-1" autocomplete="off"/>
+                        </td>
+                        <td>
+                            <input id="ventacreada_descripcion_2" type="text" value="Paquete" tabindex="-1" autocomplete="off" />
+                        </td>
+                        <td>
+                            <input id="ventacreada_costosiniva_2" type="number" tabindex="-1" autocomplete="off" />
+                        </td>
+                        <td>
+                            <input id="ventacreada_costoiva_2" type="number" tabindex="-1" autocomplete="off"/>
+                        </td>
+                        <td>
+                            <input id="ventacreada_costoconiva_2" type="number" tabindex="-1" autocomplete="off"/>
+                        </td>
+                        <td>
+                            <input id="ventacreada_precio_2" type="number" tabindex="-1" autocomplete="off"/>
+                        </td>
+                        <td>
+                            <input id="ventacreada_ganancia_2" type="number" tabindex="-1" autocomplete="off"/>
+                        </td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <input type="checkbox" id="ventacreada_muestra_3" value="activo" checked="checked"
+                                tabindex="-1" />
+                        </td>
+                        <td>
+                            <input id="ventacreada_cantidad_3" type="number" tabindex="-1" autocomplete="off"/>
+                        </td>
+                        <td>
+                            <input id="ventacreada_unidad_3" type="number" tabindex="-1" autocomplete="off"/>
+                        </td>
+                        <td>
+                            <input id="ventacreada_descripcion_3" type="text" value="Paquete" tabindex="-1" autocomplete="off"/>
+                        </td>
+                        <td>
+                            <input id="ventacreada_costosiniva_3" type="number" tabindex="-1" autocomplete="off"/>
+                        </td>
+                        <td>
+                            <input id="ventacreada_costoiva_3" type="number" tabindex="-1" autocomplete="off"/>
+                        </td>
+                        <td>
+                            <input id="ventacreada_costoconiva_3" type="number" tabindex="-1" autocomplete="off"/>
+                        </td>
+                        <td>
+                            <input id="ventacreada_precio_3" type="number" tabindex="-1" autocomplete="off"/>
+                        </td>
+                        <td>
+                            <input id="ventacreada_ganancia_3" type="number" tabindex="-1" autocomplete="off"/>
+                        </td>
+                        <td></td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+
+<script>
+const configDev = {{ configDev | tojson }};
+if (configDev){
+    if (configDev["MS_SOY"]){
+        window.thisRol = configDev["MS_SOY"]["rol"];
+    }
+}
+
+document.addEventListener("keydown", function (e) {
+  if (
+    e.target.type === "number" &&
+    (e.key === "ArrowUp" || e.key === "ArrowDown")
+  ) {
+    e.preventDefault();
+  }
+});
+
+document.addEventListener("DOMContentLoaded", async () => {
+
+    function setReadOnly(){
+        // let rol;
+        // if (configDev){
+        //     if (configDev["MS_SOY"]){
+        //         rol = configDev["MS_SOY"]["rol"];
+        //     }
+        // }
+        if (window.thisRol && window.thisRol=="maestro") {    // maestro
+            // let overlay = document.getElementById("pageOverlay");
+            // overlay.style.display = "none";
+            btnGuardar.style.display="block";
+        } else {
+            let overlay = document.getElementById("pageOverlay");
+            overlay.style.display = "block";
+            trInfoAdicional.style.display="none";
+            descripcion.classList.add("accesible");
+            //costoTr.style.backgroundColor="yellow";
+            //costoTr.classList.add("accesible");
+            //precioTr.style.backgroundColor="lightgreen";
+            //precioTr.classList.add("accesible");
+        }
+    }
+
+    /* CONTROLES */
+
+    const btnGuardar = document.getElementById("btnGuardar");
+    //const btnNuevo = document.getElementById("btnNuevo");
+    const calcPiezas = document.getElementById("calcPiezas");
+    const calcGramos = document.getElementById("calcGramos");
+    const codigoBarras = document.getElementById("codigoBarras");
+    const productoId = document.getElementById("productoId");
+    codigoBarras.addEventListener("change", async function(){
+        const valCodBarras = await validaCodigoBarras();
+        console.log(valCodBarras);
+        if (!valCodBarras){
+            playErrorSound();
+        } else {
+            playSuccessSound();
+        }
+    });
+    const codigoNumerico =  document.getElementById("codigoNumerico");
+    codigoNumerico.addEventListener("change", async function(){
+        const valCodNumerico = await validaCodigoNumerico();
+        console.log(valCodNumerico);
+        if (!valCodNumerico){
+            playErrorSound();
+        } else {
+            playSuccessSound();
+        }
+    });
+    const claves = document.getElementById("claves");
+    const costoConIvaKg = document.getElementById("costoConIvaKg");
+    const costoConIvaPaquete = document.getElementById("costoConIvaPaquete");
+    const costoConIvaUnidad = document.getElementById("costoConIvaUnidad");
+    const costoIvaKg = document.getElementById("costoIvaKg");
+    const costoIvaPaquete = document.getElementById("costoIvaPaquete");
+    const costoIvaUnidad = document.getElementById("costoIvaUnidad");
+    const costoSinIvaKg = document.getElementById("costoSinIvaKg");
+    const costoSinIvaPaquete = document.getElementById("costoSinIvaPaquete");
+    const costoSinIvaUnidad = document.getElementById("costoSinIvaUnidad");
+    const descripcion = document.getElementById("descripcion");
+    const descVentaPaquete = document.getElementsByName("descVentaPaquete");
+    const gananciaKg = document.getElementById("gananciaKg");
+    const gananciaPaquete = document.getElementById("gananciaPaquete");
+    const gananciaUnidad = document.getElementById("gananciaUnidad");
+    const existenciaKgs = document.getElementById("existenciaKgs");
+    const existenciaPaquetes = document.getElementById("existenciaPaquetes");
+    const existenciaUnidades = document.getElementById("existenciaUnidades");
+    //const existenciaAnteriorKgs = document.getElementById("existenciaAnteriorKgs");
+    //const existenciaAnteriorPaquetes = document.getElementById("existenciaAnteriorPaquetes");
+    //const existenciaAnteriorUnidades = document.getElementById("existenciaAnteriorUnidades");
+    //const llegaronKg = document.getElementById("llegaronKg");
+    //const llegaronPaquete = document.getElementById("llegaronPaquete");
+    //const llegaronUnidad = document.getElementById("llegaronUnidad");
+    //const minimoKg = document.getElementById("minimoKg");
+    //const minimoPaquete = document.getElementById("minimoPaquete");
+    //const minimoUnidad = document.getElementById("minimoUnidad");
+    const modifiedDate = document.getElementById("modifiedDate");
+    const muestraKg = document.getElementById("muestraKg");
+    const muestraPaquete = document.getElementById("muestraPaquete");
+    const muestraUnidad = document.getElementById("muestraUnidad");
+    const minimoUnidades = document.getElementById("minimoUnidades");
+    const minimoPaquetes = document.getElementById("minimoPaquetes");
+    const minimoKgs = document.getElementById("minimoKgs");
+    const numeroUnidades = document.getElementById("numeroUnidades");
+    const numeroKgs = document.getElementById("numeroKgs");
+    const notActivo = document.getElementById("notActivo");
+    const piezasPorKg = document.getElementById("piezasPorKilo");
+    const precioKg = document.getElementById("precioKg");
+    const precioPaquete = document.getElementById("precioPaquete");
+    const precioUnidad = document.getElementById("precioUnidad");
+    const preferenciaVenta = document.getElementById("preferenciaVenta");
+    const proveedorId = document.getElementById("proveedorId");
+    const seCompraPorPaquete = document.getElementById("seCompraPorPaquete");
+    const seCompraPorUnidad = document.getElementById("seCompraPorUnidad");
+    const seCompraPor = document.getElementsByName("seCompraPor");
+    const semaforoEstado = document.getElementById("semaforoEstado");
+    const unidadInv = document.getElementById("unidadInv");
+    const lblUnidades = document.getElementsByName("lblUnidades");
+    const lblPaquetes = document.getElementsByName("lblPaquetes");
+    const lblKgs = document.getElementsByName("lblKgs");
+    const lblUnidadCompra = document.getElementsByName("lblUnidadCompra");
+    const descUnidadCompra = document.getElementById("descUnidadCompra");
+    const ligaProductoTruper = document.getElementById("ligaProductoTruper");
+    const tdImagen = document.getElementById("tdImagen");
+    const trInfoAdicional = document.getElementById("trInfoAdicional");
+    const precioTr =document.getElementById("precioTr");
+    const costoTr =document.getElementById("costoTr");
+    const kilogramLbl =document.getElementById("kilogramLbl");
+
+    btnGuardar.addEventListener("focus", function () {
+        this.classList.add("blink-caret"); // Add blinking cursor class
+    });
+
+    btnGuardar.addEventListener("blur", function () {
+        this.classList.remove("blink-caret"); // Remove blinking cursor class
+    });
+
+    /* HELPERS */
+
+    async function validaCodigoBarras(){
+        let validSuccess = false;
+        const codBarras = codigoBarras.value.trim();
+        if (codBarras){
+            res = await myfetch("/producto/exists", {"campo":"codigoBarras", 
+                "valor":codBarras, 
+                "productoId": productoId.innerText});
+            //console.log(res);
+            if (res.success){
+                const exists = res.resultado[0].exists;
+                const prodId = res.resultado[0].productoId;
+                if (exists){
+                    centerMessage(`Ya existe un producto con barras ${codBarras}`, 3, "orange");
+                } else {
+                    validSuccess=true;
+                }
+            } else {
+                centerMessage(`No se pudo validar si el codigo barras ${codBarras} ya existe`, 3, "orange");
+            }
+        } else {
+            validSuccess=true;
+        }
+        return validSuccess;
+    }
+
+
+    async function validaCodigoNumerico(){
+        let validSuccess = false;
+        const codNumerico = codigoNumerico.value.trim();
+        if (codNumerico){
+            res = await myfetch("/producto/exists", {"campo":"codigoNumerico", 
+                "valor":codNumerico, 
+                "productoId": productoId.innerText});
+            //console.log(res);
+            if (res.success){
+                const exists = res.resultado[0].exists;
+                const prodId = res.resultado[0].productoId;
+                if (exists){
+                    centerMessage(`Ya existe un producto con codigo numerico ${codNumerico}`, 3, "orange");
+                } else {
+                    validSuccess=true;
+                }
+            }
+        } else {
+            validSuccess=true;
+        }
+        return validSuccess;
+    }
+
+    function setSelectOptions(selectObject, isEnabled, selectedValue, opsKeptOpposite) {
+        const options = selectObject.options;
+        for (let i = 0; i < options.length; i++) {
+            if (selectedValue && options[i].value === selectedValue) {
+                options[i].selected = true;
+                options[i].disabled = !isEnabled;
+                options[i].style.backgroundColor = isEnabled ? "" : "gray";
+            } else {
+                if (opsKeptOpposite && (opsKeptOpposite.includes(options[i].value) || opsKeptOpposite.includes("AllValues"))) {
+                    options[i].disabled = !isEnabled;
+                    options[i].style.backgroundColor = !isEnabled ? "" : "gray";
+                } else {
+                    options[i].disabled = isEnabled;
+                    options[i].style.backgroundColor = isEnabled ? "" : "gray";
+                }
+            }
+        }
+    }
+
+    //enableEnterCommit(numeroUnidades);
+    //enableEnterCommit(numeroKgs);
+
+    /* EVENT LISTENERS */
+
+    function seCompraPorChanged(){
+        if (seCompraPorUnidad.checked) {
+                //console.log("seCompraPorUnidad.checked");
+                // Inhabilitamos Paquete y Kilo (2 y 3)
+                setSelectOptions(unidadInv, true, 'pieza', []);
+                renderPaquete(false);
+                renderKg(false);
+                renderUnidad(true);
+            } else if (seCompraPorPaquete.checked) {
+                // Inhabilitamos Unidad y Kilo (1 y 3)
+                renderUnidad(false);
+                renderKg(true);
+                renderPaquete(true);
+            }
+            //updateOptionsPreferenciaVenta();
+    }
+
+    seCompraPor.forEach(radio => {
+        radio.addEventListener("change", function () {
+            seCompraPorChanged();
+        });
+    });
+
+    function calcPiezasGramosChanged(){
+        if (calcGramos.value.trim()!='' && calcPiezas.value.trim()!='' && numeroKgs.value.trim()!=''
+            && unidadInv.value == 'pieza'){
+                numeroUnidades.value = (numeroKgs.value * calcPiezas.value / (calcGramos.value/1000)).toFixed(0);
+                paqueteNumeroKgChanged();
+        }
+    }
+
+    calcPiezas.addEventListener("change", function () {
+        calcPiezasGramosChanged();
+    });
+
+    calcGramos.addEventListener("change", function () {
+        calcPiezasGramosChanged();
+    });
+
+    // change here, "change" was changed
+    numeroUnidades.addEventListener("change", function () {
+        paqueteNumeroKgChanged();
+    });
+
+    // change here, "change" was changed
+    numeroKgs.addEventListener("change", function () {
+        paqueteNumeroKgChanged();
+    });
+
+    costoSinIvaPaquete.addEventListener("change", function () {
+        costoSinIvaPaqueteChanged();
+    });
+
+    costoConIvaPaquete.addEventListener("change", function () {
+        costoConIvaPaqueteChanged();
+        enableMuestraPaquete();
+    });
+
+    costoSinIvaUnidad.addEventListener("change", function () {
+        costoSinIvaUnidadChanged();
+    });
+
+    costoConIvaUnidad.addEventListener("change", function () {
+        costoConIvaUnidadChanged();
+    });
+
+    btnGuardar.addEventListener("click", async function () {
+        const validaCodBarras = await validaCodigoBarras();
+        if (!validaCodBarras) return;
+
+        const validaCodNumerico = await validaCodigoNumerico();
+        if (!validaCodNumerico) return;
+
+        if (numeroUnidades.value.trim()!='' && parseFloat(numeroUnidades.value)==1 && unidadInv.value=='pieza'){
+            centerMessage("No hay paquetes de una pieza");
+            return;
+        }
+        if (descripcion.value.trim()==''){
+            centerMessage("No hay descripcion");
+            return;
+        }
+        if (!preferenciaVenta.value){
+            centerMessage("No hay preferencia de venta");
+            return;
+        }
+        guardarProducto();
+        
+    });
+
+    /* HELPERS */
+
+    function enableMuestraUnidad() {
+        if (costoConIvaUnidad.value.trim() != '' && precioUnidad.value.trim() != ''
+            && parseFloat(precioUnidad.value) > 0 && parseFloat(costoConIvaUnidad.value) > 0) {
+            muestraUnidad.disabled = false;
+            if (seCompraPorUnidad.checked) {
+                muestraUnidad.checked = true;
+            }
+        } else {
+            muestraUnidad.disabled = true;
+            muestraUnidad.checked = false;
+        }
+        updateOptionsPreferenciaVenta();
+    }
+
+    function enableMuestraPaquete() {
+        if (costoConIvaPaquete.value.trim() != '' && precioPaquete.value.trim() != ''
+            && parseFloat(precioPaquete.value) > 0 && parseFloat(costoConIvaPaquete.value) > 0) {
+            muestraPaquete.disabled = false;
+        } else {
+            muestraPaquete.disabled = true;
+            muestraPaquete.checked = false;
+        }
+        updateOptionsPreferenciaVenta();
+    }
+
+    function enableMuestraKg() {
+        if (costoConIvaKg.value.trim() != '' && precioKg.value.trim() != ''
+            && parseFloat(precioKg.value) > 0 && parseFloat(costoConIvaKg.value) > 0) {
+            muestraKg.disabled = false;
+        } else {
+            muestraKg.disabled = true;
+            muestraKg.checked = false;
+        }
+        updateOptionsPreferenciaVenta();
+    }
+
+    function precioUnidadChanged() {
+        updateGananciaUnidad();
+        enableMuestraUnidad();
+    }
+
+    precioUnidad.addEventListener("change", function () {
+        precioUnidadChanged();
+    });
+
+    function precioPaqueteChanged() {
+        updateGananciaPaquete();
+        enableMuestraPaquete();
+    }
+
+    precioPaquete.addEventListener("change", function () {
+        precioPaqueteChanged();
+    });
+
+    function precioKgChanged() {
+        updateGananciaKg();
+        enableMuestraKg();
+    }
+
+    precioKg.addEventListener("change", function () {
+        precioKgChanged();
+    });
+
+    unidadInv.addEventListener("change", function () {
+        unidadInvChanged();
+        //updateOptionsPreferenciaVenta();
+    });
+
+    // llegaronUnidad.addEventListener("change", function () {
+    //     llegaronUnidadChanged(llegaronUnidad.value);
+    //     llegaronPaqueteChanged((llegaronUnidad.value / numeroUnidades.value).toFixed(2));
+    //     llegaronKgChanged((llegaronUnidad.value / numeroUnidades.value * numeroKgs.value).toFixed(2));
+    // });
+
+    existenciaUnidades.addEventListener("change", function () {
+        if (seCompraPorPaquete.checked && numeroUnidades.value.trim()!=''){
+            existenciaPaquetes.value = (existenciaUnidades.value / numeroUnidades.value).toFixed(2);
+            if (numeroKgs.value.trim()!=''){
+                existenciaKgs.value = (existenciaPaquetes.value * numeroKgs.value).toFixed(2);
+            } else {
+                existenciaKgs.value = null;
+            }
+        } else {
+            existenciaPaquetes.value = null;
+             existenciaKgs.value = null;
+        }
+        
+    });
+
+    // llegaronPaquete.addEventListener("change", function () {
+    //     llegaronPaqueteChanged(llegaronPaquete.value);
+    //     llegaronUnidadChanged(llegaronPaquete.value * numeroUnidades.value);
+    //     llegaronKgChanged((llegaronPaquete.value * numeroKgs.value).toFixed(2));
+    // });
+
+    function existenciaPaqueteChanged(){
+        if (existenciaPaquetes.value.trim()!='' && seCompraPorPaquete.checked && numeroUnidades.value.trim()!=''){
+            existenciaUnidades.value = (existenciaPaquetes.value * numeroUnidades.value).toFixed(2);
+        } else {
+            existenciaUnidades.value = null;
+        }
+        if (existenciaPaquetes.value.trim()!='' && seCompraPorPaquete.checked && numeroKgs.value.trim()!=''){
+            existenciaKgs.value = (existenciaPaquetes.value * numeroKgs.value).toFixed(2);
+        } else {
+            existenciaKgs.value = null;
+        }
+    }
+
+    existenciaPaquetes.addEventListener("change", function () {
+        existenciaPaqueteChanged();
+        //llegaronPaquete.value = (parseFloat(existenciaPaquetes.value) - parseFloat(existenciaAnteriorPaquetes.value)).toFixed(2);
+        //llegaronUnidadChanged(llegaronPaquete.value * numeroUnidades.value);
+        //llegaronKgChanged((llegaronPaquete.value * numeroKgs.value).toFixed(2));
+    });
+
+    function minimoUnidadesChanged(){
+        minimoPaquetes.value = (parseFloat(minimoUnidades.value) / parseFloat(numeroUnidades.value)).toFixed(3);
+        minimoKgs.value = (parseFloat(minimoUnidades.value) / parseFloat(numeroUnidades.value) * parseFloat(numeroKgs.value)).toFixed(3);
+    }
+
+    minimoUnidades.addEventListener("change", function () {
+        minimoUnidadesChanged();
+    });
+
+    function minimoPaquetesChanged(){
+        if (numeroUnidades.value.trim() != '') {
+            minimoUnidades.value = (parseFloat(minimoPaquetes.value) * parseFloat(numeroUnidades.value)).toFixed(3);
+        } else {
+            minimoUnidades.value = '';
+        }
+        if (numeroKgs.value.trim() != '') {
+            minimoKgs.value = (parseFloat(minimoPaquetes.value) * parseFloat(numeroKgs.value)).toFixed(3);
+        } else {
+            minimoKgs.value = '';
+        }
+    }
+
+    minimoPaquetes.addEventListener("change", function () {
+       minimoPaquetesChanged();
+    });
+
+    function minimoKgsChanged(){
+        minimoPaquetes.value = (parseFloat(minimoKgs.value) / parseFloat(numeroKgs.value)).toFixed(3);
+        minimoUnidades.value = (parseFloat(minimoKgs.value) / parseFloat(numeroKgs.value) * parseFloat(numeroUnidades.value)).toFixed(3);
+    }
+
+    minimoKgs.addEventListener("change", function () {
+        minimoKgsChanged();
+    });
+
+    muestraUnidad.addEventListener("change", function () {
+        updateOptionsPreferenciaVenta();
+        //viewVentaProducto(creaProductoObjecto());
+    });
+
+    muestraPaquete.addEventListener("change", function () {
+        updateOptionsPreferenciaVenta();
+        //viewVentaProducto(creaProductoObjecto());
+    });
+
+    muestraKg.addEventListener("change", function () {
+        updateOptionsPreferenciaVenta();
+        //viewVentaProducto(creaProductoObjecto());
+    });
+
+    document.getElementById("notActivo").addEventListener("change", function () {
+        //togglePageLock(this.checked);
+    });
+
+    /* RENDERIZADO */
+
+    /* Unidad */
+
+    function renderUnidadCosto(isEnabled) {
+        costoSinIvaUnidad.value = '';
+        costoIvaUnidad.value = '';
+        costoConIvaUnidad.value = '';
+        costoSinIvaUnidad.disabled = !isEnabled;
+        costoConIvaUnidad.disabled = !isEnabled;
+        if (isEnabled && seCompraPorUnidad.checked) {
+            costoSinIvaUnidad.tabIndex = 0;
+            costoConIvaUnidad.tabIndex = 0;
+        } else {
+            costoSinIvaUnidad.tabIndex = -1;
+            costoConIvaUnidad.tabIndex = -1;
+        }
+
+    }
+
+    function renderUnidadVenta(isEnabled) {
+        precioUnidad.value = isEnabled ? precioUnidad.value : '';
+        precioUnidad.disabled = !isEnabled;
+        gananciaUnidad.innerHTML = '';
+        precioUnidad.tabIndex = precioUnidad.disabled ? -1 : 0;
+        enableMuestraUnidad();
+    }
+
+    function renderUnidadInventario(isEnabled) {
+        //llegaronUnidad.value = '';
+        existenciaUnidades.value = isEnabled ? existenciaUnidades.value : null;
+        minimoUnidades.value = isEnabled ? minimoUnidades.value : null;
+        //llegaronUnidad.disabled = !isEnabled;
+        existenciaUnidades.disabled = !isEnabled;
+        minimoUnidades.disabled = !isEnabled;
+        if (isEnabled && seCompraPorUnidad.checked) {
+            //llegaronUnidad.tabIndex = 0;
+            existenciaUnidades.tabIndex = 0;
+            minimoUnidades.tabIndex = 0;
+        } else {
+            //llegaronUnidad.tabIndex = -1;
+            existenciaUnidades.tabIndex = -1;
+            minimoUnidades.tabIndex = -1;
+        }
+    }
+
+    function renderUnidadDetalles(isEnabled) {
+        renderUnidadCosto(isEnabled);
+        renderUnidadVenta(isEnabled);
+        renderUnidadInventario(isEnabled);
+    }
+
+    function renderUnidad(isEnabled) {
+        renderUnidadDetalles(isEnabled);
+    }
+
+    /* Paquete */
+
+    function renderPaqueteCosto(isEnabled) {
+        numeroUnidades.value = isEnabled ? numeroUnidades.value : '';
+        unidadInv.value = isEnabled ? unidadInv.value : 'pieza';
+        numeroKgs.value = isEnabled ? numeroKgs.value : '';
+        costoSinIvaPaquete.value = isEnabled ? costoSinIvaPaquete.value : '';
+        costoIvaPaquete.value = isEnabled ? costoIvaPaquete.value : '';
+        costoConIvaPaquete.value = isEnabled ? costoConIvaPaquete.value : '';
+
+        //numeroUnidades.disabled = !isEnabled;
+        //numeroKgs.disabled = !isEnabled;
+
+        costoSinIvaPaquete.disabled = !isEnabled;
+        costoConIvaPaquete.disabled = !isEnabled;
+
+        costoSinIvaPaquete.tabIndex = costoSinIvaPaquete.disabled ? -1 : 0;
+        costoConIvaPaquete.tabIndex = costoConIvaPaquete.disabled ? -1 : 0;
+        unidadInv.tabIndex = unidadInv.disabled ? -1 : 0;
+        numeroKgs.tabIndex = numeroKgs.disabled ? -1 : 0;
+        //renderPiezasGramos(isEnabled);
+    }
+
+    function renderPaqueteVenta(isEnabled) {
+        precioPaquete.value = isEnabled ? precioPaquete.value : '';
+        gananciaPaquete.value = isEnabled ? gananciaPaquete.value : '';
+        precioPaquete.disabled = !isEnabled;
+        precioPaquete.tabIndex = precioPaquete.disabled ? -1 : 0;
+        enableMuestraPaquete();
+    }
+
+    function renderPaqueteInventario(isEnabled) {
+        //llegaronPaquete.value = isEnabled ? llegaronPaquete.value : '';
+        existenciaPaquetes.value = isEnabled ? existenciaPaquetes.value : '';
+        minimoPaquetes.value = isEnabled ? minimoPaquetes.value : '';
+        //llegaronPaquete.disabled = !isEnabled;
+        existenciaPaquetes.disabled = !isEnabled;
+        minimoPaquetes.disabled = !isEnabled;
+        if (isEnabled && seCompraPorPaquete.checked) {
+            //llegaronUnidad.tabIndex = -1;
+            existenciaUnidades.tabIndex = -1;
+            minimoUnidades.tabIndex = -1;
+            minimoKgs.tabIndex = -1;
+            //llegaronPaquete.tabIndex = llegaronPaquete.disabled ? -1 : 0;
+            existenciaPaquetes.tabIndex = existenciaPaquetes.disabled ? -1 : 0;
+            minimoPaquetes.tabIndex = minimoPaquetes.disabled ? -1 : 0;
+        } else {
+            //llegaronPaquete.tabIndex = -1;
+            existenciaPaquetes.tabIndex = -1;
+            minimoPaquetes.tabIndex = -1;
+        }
+    }
+
+    function renderPaqueteDetalles(isEnabled) {
+        renderPaqueteCosto(isEnabled);
+        renderPaqueteVenta(isEnabled);
+        renderPaqueteInventario(isEnabled);
+    }
+
+    function renderPaquete(isEnabled) {
+        numeroUnidades.disabled = !isEnabled;
+        unidadInv.disabled = !isEnabled;
+        numeroKgs.disabled = !isEnabled;
+
+        numeroUnidades.tabIndex = numeroUnidades.disabled ? -1 : 0;
+        unidadInv.tabIndex = unidadInv.disabled ? -1 : 0;
+        numeroKgs.tabIndex = numeroKgs.disabled ? -1 : 0;
+
+        renderPaqueteDetalles(isEnabled);
+        unidadInvChanged();
+        paqueteNumeroKgChanged();
+    }
+
+    /* Kilo */
+
+    function renderKgCosto(isEnabled) {
+        costoSinIvaKg.value = isEnabled ? costoSinIvaKg.value : '';
+        costoIvaKg.value = isEnabled ? costoIvaKg.value : '';
+        costoConIvaKg.value = isEnabled ? costoConIvaKg.value : '';
+        costoSinIvaKg.disabled = !isEnabled;
+        costoIvaKg.disabled = !isEnabled;
+        costoConIvaKg.disabled = !isEnabled;
+    }
+
+    function renderKgVenta(isEnabled) {
+        precioKg.value = isEnabled ? precioKg.value : '';
+        gananciaKg.innerHTML = isEnabled ? gananciaKg.value : '';
+        precioKg.disabled = !isEnabled;
+        precioKg.tabIndex = precioKg.disabled ? -1 : 0;
+        enableMuestraKg();
+    }
+
+    function renderKgInventario(isEnabled) {
+        //llegaronKg.value = isEnabled ? llegaronKg.value : '';
+        existenciaKgs.value = isEnabled ? existenciaKgs.value : '';
+        minimoKgs.value = isEnabled ? minimoKgs.value : '';
+        minimoKgs.disabled = !isEnabled;
+        lblKgs.forEach(label => {
+            label.innerHTML = isEnabled ? "kgs" : "";
+        });
+    }
+
+    function renderKgDetalles() {
+        if (seCompraPorPaquete.checked && numeroKgs.value.trim() != '') {
+            isEnabled = true;
+        } else {
+            isEnabled = false;
+        }
+        renderKgCosto(isEnabled);
+        renderKgVenta(isEnabled);
+        renderKgInventario(isEnabled);
+    }
+
+    function renderKg(isEnabled) {
+        calcPiezas.disabled = !isEnabled;
+        calcGramos.disabled = !isEnabled;
+        calcPiezas.value = isEnabled ? calcPiezas.value : null;
+        calcGramos.value = isEnabled ? calcGramos.value : null;
+        renderKgDetalles();
+    }
+
+    /* CHANGED HANDLERS */
+
+    function paqueteNumeroKgChanged() {
+        paqueteEnabled = false;
+        unidadEnabled = false;
+        kgEnabled = false;
+        if (seCompraPorPaquete.checked == true) {
+            numeroUnidades.disabled = false;
+            numeroKgs.disabled = false;
+            if (seCompraPorPaquete.checked == true && numeroUnidades.value.trim() != '') {
+                unidadEnabled = true;
+                paqueteEnabled = true;
+            }
+            if (numeroKgs.value.trim() != '') {
+                kgEnabled = true;
+                paqueteEnabled = true;
+            }
+        }
+        setSelectOptions(unidadInv, true, '', ["AllValues"]);
+        lblPaquetes.forEach(label => {
+            label.innerHTML = paqueteEnabled ? "paquetes" : "";
+        });
+        if (!unidadEnabled) {
+            costoSinIvaUnidad.value = '';
+        }
+        if (!kgEnabled) {
+            costoSinIvaKg.value = '';
+        }
+        updateDescVentaPaquete();
+        unidadInvChanged();
+        renderPaqueteDetalles(paqueteEnabled);
+        renderUnidadVenta(unidadEnabled);
+        renderUnidadInventario(unidadEnabled);
+        renderKgVenta(kgEnabled);
+        renderKgInventario(kgEnabled);
+        //renderPiezasGramos(kgEnabled);
+        costoSinIvaPaqueteChanged();
+        costoSinIvaKgChanged();
+        updatePiezasPorKilo();
+        updateDescUnidadCompra();
+        existenciaPaqueteChanged();
+        minimoPaquetesChanged();
+        
+        //updateOptionsPreferenciaVenta();
+    }
+
+    function renderPiezasGramos(isEnabled){
+        calcPiezas.disabled = !isEnabled;
+        calcGramos.disabled = !isEnabled;
+        calcPiezas.value = isEnabled ? calcPiezas.value : null;
+        calcGramos.value = isEnabled ? calcGramos.value : null;
+    }
+
+    function creaProductoObjecto() {
+        let prodObj = {};
+        prodObj.productoId = productoId.innerText;
+        prodObj.codigoBarras = codigoBarras.value;
+        prodObj.codigoNumerico = codigoNumerico.value;
+        prodObj.claves = claves.value;
+        prodObj.proveedorId = proveedorId.value;
+        prodObj.descripcion = descripcion.value;
+        for (let i = 0; i < seCompraPor.length; i++) {
+            if (seCompraPor[i].checked) {
+                seCompraPorValue = seCompraPor[i].value;
+                break;
+            }
+        }
+        prodObj.seCompraPor = seCompraPorValue;
+        prodObj.costoSinIvaUnidad = costoSinIvaUnidad.value;
+        prodObj.precioUnidad = precioUnidad.value;
+        prodObj.muestraUnidad = muestraUnidad.checked;
+        prodObj.costoSinIvaPaquete = costoSinIvaPaquete.value;
+        prodObj.precioPaquete = precioPaquete.value;
+        prodObj.muestraPaquete = muestraPaquete.checked;
+        prodObj.costoSinIvaKg = costoSinIvaKg.value;
+        prodObj.precioKg = precioKg.value;
+        prodObj.muestraKg = muestraKg.checked;
+        prodObj.numeroUnidades = numeroUnidades.value;
+        prodObj.numeroKgs = numeroKgs.value;
+        prodObj.unidadInv = unidadInv.value;
+        prodObj.existenciaUnidades = existenciaUnidades.value;
+        prodObj.existenciaPaquetes = existenciaPaquetes.value;
+        prodObj.existenciaKgs = existenciaKgs.value;
+        prodObj.minimoUnidades = minimoUnidades.value;
+        prodObj.minimoPaquetes = minimoPaquetes.value;
+        prodObj.minimoKgs = minimoKgs.value;
+        prodObj.preferenciaVenta = preferenciaVenta.value;
+        prodObj.ultimaVenta = ultimaVenta.value;
+        prodObj.activo = !notActivo.checked;
+        return prodObj;
+    }
+
+    function updateOptionsPreferenciaVenta() {
+        let opsKept = [];
+        let opcionesPreferencia = [];
+        if (seCompraPorUnidad.checked && muestraUnidad.checked) {
+            optionUnidad = document.createElement("option");
+            optionUnidad.value = -1;
+            optionUnidad.text = descUnidadCompra.innerHTML;
+            opcionesPreferencia.push(optionUnidad);
+        } else if (seCompraPorPaquete.checked) {
+            if (numeroUnidades.value.trim() != '') {
+                if (muestraUnidad.checked) {
+                    optionUnidad = document.createElement("option");
+                    optionUnidad.value = -1;
+                    optionUnidad.text = descUnidadCompra.innerHTML;
+                    opcionesPreferencia.push(optionUnidad);
+                }
+            } else {
+                muestraUnidad.checked = false;
+            }
+            if (numeroKgs.value.trim() != '') {
+                if (muestraKg.checked) {
+                    optionKg = document.createElement("option");
+                    optionKg.value = -3;
+                    optionKg.text = "1 Kg"
+                    opcionesPreferencia.push(optionKg);
+                }
+            } else {
+                muestraKg.checked = false;
+            }
+            if (muestraPaquete.checked) {
+                optionPaquete = document.createElement("option");
+                optionPaquete.value = -2;
+                optionPaquete.text = descVentaPaquete[0].innerText;
+                opcionesPreferencia.push(optionPaquete);
+            }
+        }
+        while (preferenciaVenta.options.length > 0) {
+            preferenciaVenta.remove(0);
+        }
+        opcionesPreferencia.forEach(option => {
+            preferenciaVenta.add(option);
+        });
+        if (preferenciaVenta.options.length > 0) {
+            prodObj = creaProductoObjecto();
+        } else {
+            prodObj = null;
+        }
+    }
+
+    function costoSinIvaUnidadChanged() {
+        if (costoSinIvaUnidad.value.trim() == '') {
+            costoIvaUnidad.value = '';
+            costoConIvaUnidad.value = '';
+        } else {
+            costoIvaUnidad.value = (costoSinIvaUnidad.value * window.IVA/100).toFixed(3);
+            costoConIvaUnidad.value = (parseFloat(costoSinIvaUnidad.value) + parseFloat(costoIvaUnidad.value)).toFixed(3);
+        }
+        costoConIvaUnidadChanged();
+    }
+
+    function costoConIvaUnidadChanged() {
+        if (costoConIvaUnidad.value.trim() == '') {
+            costoIvaUnidad.value = '';
+            costoSinIvaUnidad.value = '';
+        } else {
+            costoIvaUnidad.value = (costoConIvaUnidad.value - (costoConIvaUnidad.value / (1 + window.IVA/100))).toFixed(3);
+            costoSinIvaUnidad.value = (costoConIvaUnidad.value - costoIvaUnidad.value).toFixed(3);
+        }
+        enableMuestraUnidad();
+        updateGananciaUnidad();
+    }
+
+    function costoSinIvaPaqueteChanged() {
+        if (seCompraPorPaquete.checked && costoSinIvaPaquete.value.trim() != ''
+            && (numeroUnidades.value.trim() != '' || numeroKgs.value.trim() != '')) {
+            costoIvaPaquete.value = (costoSinIvaPaquete.value * window.IVA/100).toFixed(2);
+            costoConIvaPaquete.value = (parseFloat(costoSinIvaPaquete.value) + parseFloat(costoIvaPaquete.value)).toFixed(2);
+            if (numeroUnidades.value.trim() != '') {
+                costoSinIvaUnidad.value = (costoSinIvaPaquete.value / numeroUnidades.value).toFixed(3);
+            } else {
+                costoSinIvaUnidad.value = '';
+            }
+            if (numeroKgs.value.trim() != '') {
+                costoSinIvaKg.value = (costoSinIvaPaquete.value / numeroKgs.value).toFixed(2);
+            } else {
+                costoSinIvaKg.value = '';
+            }
+        } else {
+            costoIvaPaquete.value = '';
+            costoConIvaPaquete.value = '';
+            costoSinIvaUnidad.value = '';
+            costoSinIvaKg.value = '';
+            precioPaquete.value = ''
+            precioUnidad.value = '';
+        }
+        costoConIvaPaqueteChanged();
+    }
+
+    function costoConIvaPaqueteChanged() {
+        if (seCompraPorPaquete.checked && costoConIvaPaquete.value.trim() != '') {
+            costoIvaPaquete.value = (costoConIvaPaquete.value - (costoConIvaPaquete.value / (1 + window.IVA/100))).toFixed(2);
+            costoSinIvaPaquete.value = (costoConIvaPaquete.value - costoIvaPaquete.value).toFixed(2);
+            if (numeroUnidades.value.trim() != '') {
+                costoSinIvaUnidad.value = (costoSinIvaPaquete.value / numeroUnidades.value).toFixed(3);
+            } else {
+                costoSinIvaUnidad.value = '';
+                precioUnidad.value = '';
+            }
+        } else {
+            costoSinIvaPaquete.value = '';
+            costoIvaPaquete.value = '';
+            costoConIvaPaquete.value = '';
+        }
+        costoSinIvaUnidadChanged();
+        if (numeroKgs.value.trim() != '' && seCompraPorPaquete.checked) {
+            costoSinIvaKg.value = (costoSinIvaPaquete.value / numeroKgs.value).toFixed(2);
+        } else {
+            costoSinIvaKg.value = '';
+        }
+        costoSinIvaKgChanged();
+        updateGananciaPaquete();
+        enableMuestraPaquete();
+    }
+
+    function costoSinIvaKgChanged() {
+        if (costoSinIvaKg.value == '' || costoSinIvaPaquete.value.trim() == '' || numeroKgs.value.trim() == '') {
+            costoSinIvaKg.value = '';
+            costoIvaKg.value = '';
+            costoConIvaKg.value = '';
+            precioKg.value = '';
+        } else {
+            costoSinIvaKg.value = (costoSinIvaPaquete.value / numeroKgs.value).toFixed(2);
+            costoIvaKg.value = (costoSinIvaKg.value * window.IVA/100).toFixed(2);
+            costoConIvaKg.value = (parseFloat(costoSinIvaKg.value) + parseFloat(costoIvaKg.value)).toFixed(2);
+        }
+        updateGananciaKg();
+        enableMuestraKg();
+    }
+
+    function updateGananciaUnidad() {
+        if (costoConIvaUnidad.value.trim() == '' || precioUnidad.value.trim() == '') {
+            gananciaUnidad.innerHTML = "";
+            return;
+        }
+        ganUnidad = (precioUnidad.value - costoConIvaUnidad.value).toFixed(3);
+        ganUnidadPerc = (100 * ganUnidad / (costoConIvaUnidad.value > 0 ? costoConIvaUnidad.value : 1)).toFixed(3);
+        ganUnidad <= 0 ? gananciaUnidad.style.color = "red" : gananciaUnidad.style.color = "";
+        gananciaUnidad.innerHTML = ganUnidad + "&nbsp;&nbsp;&nbsp;(" + ganUnidadPerc + "%)";
+    }
+
+    function updateGananciaPaquete() {
+        if (costoConIvaPaquete.value.trim() == '' || precioPaquete.value.trim() == '') {
+            gananciaPaquete.innerHTML = "";
+            return;
+        }
+        ganPaquete = (precioPaquete.value - costoConIvaPaquete.value).toFixed(2);
+        ganPaquetePerc = (100 * ganPaquete / (costoConIvaPaquete.value > 0 ? costoConIvaPaquete.value : 1)).toFixed(2);
+        ganPaquete <= 0 ? gananciaPaquete.style.color = "red" : gananciaPaquete.style.color = "";
+        gananciaPaquete.innerHTML = ganPaquete + "&nbsp;&nbsp;&nbsp;(" + ganPaquetePerc + "%)";
+    }
+
+    function updateGananciaKg() {
+        if (costoConIvaKg.value.trim() == '' || precioKg.value.trim() == '') {
+            gananciaKg.innerHTML = "";
+            return;
+        }
+        ganKg = (precioKg.value - costoConIvaKg.value).toFixed(2);
+        ganKgPerc = (100 * ganKg / (costoConIvaKg.value > 0 ? costoConIvaKg.value : 1)).toFixed(2);
+        ganKg <= 0 ? gananciaKg.style.color = "red" : gananciaKg.style.color = "";
+        gananciaKg.innerHTML = ganKg + "&nbsp;&nbsp;&nbsp;(" + ganKgPerc + "%)";
+    }
+
+    function updateDescVentaPaquete() {
+        descVentaPaquete.forEach(label => {
+            label.innerHTML = "";
+            label.innerHTML = "";
+            if (numeroUnidades.value.trim() != '') {
+                label.innerHTML += numeroUnidades.value + " " + unidadInv.value[0].toUpperCase() + unidadInv.value.slice(1) + (numeroUnidades.value > 1 ? "s" : "");
+            }
+            if (numeroKgs.value.trim() != '') {
+                if (label.innerHTML.trim() != '') {
+                    label.innerHTML += "&nbsp;|&nbsp;";
+                }
+                label.innerHTML += numeroKgs.value + " Kg";
+            }
+        });
+    }
+
+    function updatePiezasPorKilo() {
+        if (numeroKgs.value.trim() != '' && numeroKgs.value != 0 && unidadInv.value == 'pieza' && seCompraPorPaquete.checked == true && numeroUnidades.value.trim() != '') {
+            piezasPorKg.innerHTML = (numeroUnidades.value / numeroKgs.value).toFixed(2) + " piezas/kg";
+        } else {
+            piezasPorKg.innerHTML = "";
+        }
+    }
+
+    function updateDescUnidadCompra() {
+        lblUnidades.forEach(label => {
+            label.innerHTML = unidadInv.value + "s";
+        });
+        lblUnidadCompra.forEach(label => {
+            label.innerHTML = unidadInv.value[0].toUpperCase() + unidadInv.value.slice(1);
+        });
+        descUnidadCompra.innerHTML = "1 " + unidadInv.value[0].toUpperCase() + unidadInv.value.slice(1);
+    }
+
+    function unidadInvChanged() {
+        updateDescUnidadCompra()
+        if (seCompraPorPaquete.checked && unidadInv.value == 'pieza') {
+            numeroKgs.disabled = false;
+            numeroKgs.tabIndex = 0;
+            renderKg(true);
+        } else {
+            numeroKgs.value = '';
+            numeroKgs.disabled = true;
+            numeroKgs.tabIndex = -1;
+            renderKg(false);
+            //renderKgInventario(false);
+            //renderKgDetalles(false);
+        }
+        updateDescVentaPaquete();
+        updatePiezasPorKilo();
+    }
+
+    // function llegaronUnidadChanged(numUnidadesLlegaron) {
+    //     //llegaronUnidad.value = numUnidadesLlegaron;
+    //     existenciaUnidades.value = (parseFloat(existenciaAnteriorUnidades.value) + parseFloat(numUnidadesLlegaron)).toFixed(2);
+    // }
+
+    // function llegaronPaqueteChanged(numPaquetesLlegaron) {
+    //     if (numPaquetesLlegaron.trim() != '') {
+    //         //llegaronPaquete.value = numPaquetesLlegaron;
+    //         existenciaPaquetes.value = (parseFloat(existenciaAnteriorPaquetes.value) + parseFloat(numPaquetesLlegaron)).toFixed(2);
+    //     } else {
+    //         llegaronPaquete.value = '';
+    //         existenciaPaquetes.value = '';
+    //     }
+    // }
+
+    // function llegaronKgChanged(numKgsLlegaron) {
+    //     if (numKgsLlegaron.trim() != '') {
+    //         llegaronKg.value = numKgsLlegaron;
+    //         existenciaKgs.value = (parseFloat(existenciaAnteriorKgs.value) + parseFloat(numKgsLlegaron)).toFixed(2);
+    //     } else {
+    //         llegaronKg.value = '';
+    //         existenciaKgs.value = '';
+    //     }
+    // }
+
+    function togglePageLock(isLocked) {
+        const overlay = document.getElementById("pageOverlay");
+
+        if (isLocked) {
+            overlay.style.display = "block";
+        } else {
+            overlay.style.display = "none";
+        }
+    }
+
+    function actualizaPanelDerecho(producto){
+        tdImagen.innerHTML='';
+         ligaProductoTruper.innerHTML='';
+        ligaProductoTruper.innerText='Producto en Truper';
+        ligaProductoTruper.href="#"; 
+        if (producto.proveedorId<=2 && producto.codigoNumerico){
+                ligaProductoTruper.style.display='';
+                ligaProductoTruper.onclick = (e) => {
+                    e.preventDefault();
+                    const url =
+                        "https://www.truper.com/ficha_tecnica/controllers/index.php?codigo=" +
+                        producto.codigoNumerico;
+                    openInWorkspace(url, "Liga");
+                };
+                let imgProd = document.createElement("img");
+                imgProd.src=`/static/imagenes/truper/truper_${producto.codigoNumerico}.jpg`;
+                imgProd.style.width = "350px";
+                imgProd.style.height = "350px";
+                tdImagen.append(imgProd);
+        } else {
+            ligaProductoTruper.style.display='none';
+        }
+    }
+
+    async function initializeProducto(producto) {
+        mensajes.innerHTML = '';
+        if (!producto) {
+            productoId.innerText = null;
+            //existenciaAnteriorUnidades.value = 0;
+            //existenciaAnteriorPaquetes.value = 0;
+            //existenciaAnteriorKgs.value = 0;
+            existenciaUnidades.value = 0;
+            existenciaKgs.value = 0;
+            existenciaPaquetes.value = 0;
+            minimoUnidades.value = 0;
+            minimoPaquetes.value = 0;
+            minimoKgs.value = 0;
+            codigoBarras.value = null;
+            codigoNumerico.value = null;
+            claves.value = null;
+            descripcion.value = null;
+            proveedorId.value = 1;
+            notActivo.checked = false;
+            modifiedDate.innerText = null;
+            semaforoEstado.style.backgroundColor = 'red';
+            //togglePageLock(false);
+            setSelectOptions(unidadInv, true, 'pieza', []);
+            unidadInvChanged();
+            costoSinIvaUnidad.value = null;
+            costoSinIvaUnidadChanged();
+            costoSinIvaPaquete.value = null;
+            costoSinIvaPaqueteChanged();
+            precioPaquete.value = null;
+            precioUnidad.value = null;
+            precioKg.value = null;
+            precioUnidadChanged();
+            precioPaqueteChanged();
+            precioKgChanged();
+            numeroUnidades.value = null;
+            numeroKgs.value = null;
+            paqueteNumeroKgChanged();
+            muestraUnidad.checked = false;
+            muestraPaquete.checked = false;
+            muestraKg.checked = false;
+            updateOptionsPreferenciaVenta();
+            seCompraPorUnidad.click();
+            ultimaVenta.innerText=null;
+        } else {
+            productoId.innerText = producto.productoId;
+            //productoId.style.cursor="crosshair";
+            // productoId.addEventListener("click", function(){
+            //     findProductoPorId( producto.productoId);
+            // });
+            codigoBarras.value = producto.codigoBarras;
+            codigoNumerico.value = producto.codigoNumerico;
+            claves.value = producto.claves;
+            descripcion.value = producto.descripcion;
+            proveedorId.value = producto.proveedorId;
+            notActivo.checked = !producto.activo;
+            modifiedDate.innerText = formatDate(producto.modified_date);
+            ultimaVenta.innerText=null;
+            if (producto.ultimaVenta){
+                ultimaVenta.innerText = "Ultima venta: "+formatDate(producto.ultimaVenta);
+            }
+            semaforoEstado.style.backgroundColor = 'green';
+            //togglePageLock(notActivo.checked);
+            if (producto.seCompraPor == "unidad") {
+                seCompraPorUnidad.checked=true;
+                seCompraPorChanged();
+                costoSinIvaUnidad.value = producto.costoSinIvaUnidad;
+                costoSinIvaUnidadChanged();
+                precioUnidad.value = producto.precioUnidad;
+                precioUnidadChanged();
+                muestraUnidad.checked = producto.muestraUnidad;
+                updateOptionsPreferenciaVenta();
+                existenciaUnidades.value = producto.existenciaUnidades;
+                existenciaPaquetes.value = 0;
+                existenciaKgs.value = 0;
+                minimoUnidades.value = producto.minimoUnidades;
+                minimoUnidadesChanged();
+            } else if (producto.seCompraPor == "paquete") {
+                seCompraPorPaquete.click();
+                existenciaUnidades.value = producto.existenciaUnidades;
+                existenciaPaquetes.value = producto.existenciaPaquetes;
+                existenciaKgs.value = producto.existenciaKgs;
+                minimoUnidades.value = producto.minimoUnidades;
+                minimoPaquetes.value = producto.minimoPaquetes;
+                minimoKgs.value = producto.minimoKgs;
+                numeroUnidades.value = producto.numeroUnidades;
+                unidadInv.value = producto.unidadInv;
+                numeroKgs.value = producto.numeroKgs;
+                paqueteNumeroKgChanged();
+                unidadInvChanged();
+                costoSinIvaPaquete.value = producto.costoSinIvaPaquete;
+                costoSinIvaPaqueteChanged();
+                precioPaquete.value = producto.precioPaquete;
+                precioUnidad.value = producto.precioUnidad;
+                precioKg.value = producto.precioKg;
+                precioUnidadChanged();
+                precioPaqueteChanged();
+                precioKgChanged();
+                muestraUnidad.checked = producto.muestraUnidad;
+                muestraPaquete.checked = producto.muestraPaquete;
+                muestraKg.checked = producto.muestraKg;
+                updateOptionsPreferenciaVenta();
+                if (producto.numeroUnidades && producto.numeroUnidades>0){
+                    minimoUnidadesChanged();
+                } else if (producto.numeroKgs && producto.numeroKgs>0){
+                    minimoKgsChanged();
+                } else {
+                    minimoPaquetesChanged();
+                }
+            }
+            if (muestraUnidad.checked){
+                console.log("muestraUnidad");
+                descUnidadCompra.classList.add("accesible");
+                costoConIvaUnidad.classList.add("accesible");
+                costoConIvaUnidad.style.backgroundColor="yellow";
+                precioUnidad.classList.add("accesible");
+                precioUnidad.style.backgroundColor="lightgreen";
+            } else {
+                descUnidadCompra.classList.remove("accesible");
+                costoConIvaUnidad.classList.remove("accesible");
+                costoConIvaUnidad.style.backgroundColor="";
+                precioUnidad.classList.remove("accesible");
+                precioUnidad.style.backgroundColor="";
+            }
+            if(muestraPaquete.checked){
+                document.getElementById("descVentaPaquete").classList.add("accesible");
+                costoConIvaPaquete.classList.add("accesible");
+                costoConIvaPaquete.style.backgroundColor="yellow";
+                precioPaquete.classList.add("accesible");
+                precioPaquete.style.backgroundColor="lightgreen";
+            } else {
+                document.getElementById("descVentaPaquete").classList.remove("accesible");
+                costoConIvaPaquete.classList.remove("accesible");
+                costoConIvaPaquete.style.backgroundColor="";
+                precioPaquete.classList.remove("accesible");
+                precioPaquete.style.backgroundColor="";
+            }
+            if(muestraKg.checked){
+                kilogramLbl.classList.add("accesible");
+                piezasPorKilo.classList.add("accesible");
+                costoConIvaKg.classList.add("accesible");
+                costoConIvaKg.style.backgroundColor="yellow";
+                precioKg.classList.add("accesible");
+                precioKg.style.backgroundColor="lightgreen";
+            } else{
+                kilogramLbl.classList.remove("accesible");
+                piezasPorKilo.classList.remove("accesible");
+                costoConIvaKg.classList.remove("accesible");
+                costoConIvaKg.style.backgroundColor="";
+                precioKg.classList.remove("accesible");
+                precioKg.style.backgroundColor="";
+            }
+            actualizaPanelDerecho(producto);
+        }
+        //setReadOnly();
+    }
+
+    async function loadProveedores() {
+        res = await myfetch("/proveedor/getAll")
+        if (res.success) {
+            res.resultado.forEach(prov => {
+                optionProv = document.createElement("option");
+                optionProv.value = prov.proveedorId;
+                optionProv.text = prov.proveedor;
+                proveedorId.add(optionProv);
+            });
+        }
+    }
+
+    async function guardarProducto() {
+        producto = creaProductoObjecto();
+        res = await myfetch("/producto/set", producto)
+        if (res.success) {
+            productoId.innerText = res.productoId;
+            modifiedDate.innerText = formatDate(res.modified_date);
+            if (res.codigoBarras) {
+                codigoBarras.value = res.codigoBarras;
+            }
+            mensajes.innerHTML = `<p style="color: green;"><br/><b>Producto guardado</b><br/></p>`;
+            semaforoEstado.style.backgroundColor = 'green';
+            //existenciaAnteriorUnidades.value = existenciaUnidades.value;
+            //existenciaAnteriorPaquetes.value = existenciaPaquetes.value;
+            //existenciaAnteriorKgs.value = existenciaKgs.value;
+            //llegaronUnidad.value = '';
+            //llegaronPaquete.value = '';
+            //llegaronKg.value = '';
+            // existenciaUnidades.value = '';
+            // existenciaPaquetes.value = '';
+            // existenciaKgs.value = '';
+            actualizaPanelDerecho(producto);
+            mensajes.focus();
+            centerMessage("Producto guardado");
+            btnGuardar.style.backgroundColor="lightgreen";
+        } else {
+            centerMessage("No se pudo guardar los cambios");
+            btnGuardar.style.backgroundColor="gold";
+        }
+    }
+
+    await loadProveedores();
+    await loadIVA();
+    document.getElementById("ivaLabel").textContent = window.IVA;
+
+    async function productoEncontrado(producto){
+         console.log("INSIDE productoEncontrado");
+        await initializeProducto();
+        await initializeProducto(producto);
+        console.log("RETURNING TRUE");
+        return true;
+    }
+
+    tbodyBusqueda = document.getElementById("buscadorProducto");
+    if (window.thisRol && window.thisRol=="maestro"){
+        console.log("creaBuscadorProducto false");
+        creaBuscadorProducto(tbodyBusqueda, productoEncontrado, false, null, false);
+    } else {
+        console.log("creaBuscadorProducto true");
+        creaBuscadorProducto(tbodyBusqueda, productoEncontrado, true, null, false);
+    }
+    seCompraPorUnidad.click();
+
+    setReadOnly();
+
+});
+
+document.addEventListener("keydown", function (e) {
+    if (e.code === "Enter" && document.activeElement.tagName === "LABEL" && document.activeElement.classList.contains("radioLabel")) {
+        e.preventDefault(); // Prevent page scroll
+        document.activeElement.click(); // Simulate click
+    }
+});
+
+
+
+</script>
+<!--script src="{{ url_for('static', filename='js/ventaProductoViewer.js') }}" defer></script-->
+<script src="{{ url_for('static', filename='js/helpers.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/buscadorProducto.js') }}" defer></script>
+</body>
+
+</html>
