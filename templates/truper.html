@@ -1,0 +1,155 @@
+<HTML>
+<head>
+    <title></title>
+
+    <style>
+        /* Center container */
+        /* body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: black;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        } */
+
+        /* Big call-to-action button */
+        .open-app-btn {
+            padding: 28px 60px;
+            font-size: 26px;
+            font-weight: 600;
+            border-radius: 16px;
+            border: none;
+            cursor: pointer;
+
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+
+            box-shadow: 0 12px 25px rgba(0, 0, 0, 0.18);
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .open-app-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 16px 32px rgba(0, 0, 0, 0.22);
+        }
+
+        .open-app-btn:active {
+            transform: translateY(1px);
+            box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
+        }
+    </style>
+</head>
+<body>
+Catalogo Truper
+<input type="file" id="truperInput"><br/>
+<input type="checkbox" id="procesaBarras" checked="checked">Procesa Codigo Barras</input>
+<br/>
+<input type="checkbox" id="procesaImagenes" checked="checked">Procesa Imagenes</input>
+<br/>
+<br/>
+<button id="runTruperBtn">Subir Catalogo Truper</button>
+<br/>
+<br/>
+<br/>
+<br/>
+Inventario PDV
+<input type="file" id="inventarioInput"><br/>
+<!-- <input type="checkbox" id="procesaBarras" checked="checked">Procesa Codigo Barras</input>
+<br/>
+<input type="checkbox" id="procesaImagenes" checked="checked">Procesa Imagenes</input>
+<br/>
+<br/> -->
+<button id="runInventarioBtn">Subir Inventario</button>
+<script>
+const configDev = {{ configDev | tojson }};
+if (configDev){
+    if (configDev["MS_SOY"]){
+        window.thisRol = configDev["MS_SOY"]["rol"];
+    }
+}
+</script>
+<script type="module">
+import { startJob, watchJob } from "/static/js/jobs.js";
+
+const truperInput = document.getElementById("truperInput");
+const inventarioInput = document.getElementById("inventarioInput");
+const procesaBarras = document.getElementById("procesaBarras");
+const procesaImagenes = document.getElementById("procesaImagenes");
+//const manualPicker = document.getElementById("manualPicker");
+//manualPicker.onclick = () => fileInput.click();
+
+// truperInput.addEventListener("change", async (e) => {
+//     console.log(truperInput.value);
+// });
+
+document.getElementById("runTruperBtn").addEventListener("click", async () => {
+    const file = truperInput.files[0];
+    if (!file || !truperInput.value) {
+        alert("No se ha seleccionado un archivo");
+        return;
+    }
+    // Read file text
+    const texto = await file.text();
+    console.log("Barras: "+Number(procesaBarras.checked));
+    console.log("Imagenes: "+Number(procesaImagenes.checked));
+    const jobId = await startJob(
+        "procesaTruper",
+        { "archivos_texto" :  {"truperNuevo": texto},
+            "procesaBarras": Number(procesaBarras.checked),
+            "procesaImagenes": Number(procesaImagenes.checked)
+        }
+    );
+    console.log(jobId);
+    watchJob(
+        jobId,
+        p => console.log("Progress:", p),
+        j => {console.log("Final rows:", j.result);
+            console.log("Exit code:", j.exitCode);
+            console.log("Job:", j);
+            }
+    );
+});
+
+
+document.getElementById("runInventarioBtn").addEventListener("click", async () => {
+    const file = inventarioInput.files[0];
+    if (!file || !inventarioInput.value) {
+        alert("No se ha seleccionado un archivo");
+        return;
+    }
+    // Read file text
+    const texto = await file.text();
+    // console.log("Barras: "+Number(procesaBarras.checked));
+    // console.log("Imagenes: "+Number(procesaImagenes.checked));
+    const arrayBuffer = await file.arrayBuffer();
+    const bytes = new Uint8Array(arrayBuffer);
+    // convert to base64
+    let binary = "";
+    bytes.forEach(b => binary += String.fromCharCode(b));
+    const base64 = btoa(binary);
+
+    const jobId = await startJob(
+        "procesaInventario",
+        { "archivos_texto" :  {"inventarioNuevo": base64}
+            // "procesaBarras": Number(procesaBarras.checked),
+            // "procesaImagenes": Number(procesaImagenes.checked)
+        }
+    );
+    console.log(jobId);
+    watchJob(
+        jobId,
+        p => console.log("Progress:", p),
+        j => {console.log("Final rows:", j.result);
+            console.log("Exit code:", j.exitCode);
+            console.log("Job:", j);
+            }
+    );
+});
+
+
+</script>
+<script src="{{ url_for('static', filename='js/helpers.js') }}" defer></script>
+</body>
+</HTML>
