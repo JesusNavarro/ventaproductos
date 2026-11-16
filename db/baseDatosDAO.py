@@ -479,6 +479,11 @@ def create_esclavo():
         if not exists_table(conn, "ventas"):
             r= run_sql(conn, get_sql_file("create_ventas"))
             if not r["success"]: raise r["error"]
+        if not exists_table(conn, "ventas_detalles"):
+            strFile = get_sql_file("create_ventas_detalles")
+            r = run_sql(conn, strFile)
+            if not r["success"]: raise r["error"]
+    return returnBlank()
 
 def create_maestro():
     if not exists_db(config.BASE_MAESTRO_NAME):
@@ -486,6 +491,10 @@ def create_maestro():
     with conn_ctx(config.BASE_MAESTRO_NAME, True) as conn:
         if not exists_table(conn, "ventas"):
             strFile = get_sql_file("create_ventas")
+            r = run_sql(conn, strFile)
+            if not r["success"]: raise r["error"]
+        if not exists_table(conn, "ventas_detalles"):
+            strFile = get_sql_file("create_ventas_detalles")
             r = run_sql(conn, strFile)
             if not r["success"]: raise r["error"]
         if not exists_table(conn, "ventas_esclavos"):

@@ -65,6 +65,7 @@ copy_item "db/sql/truper_kg_unidades.sql"
 copy_item "db/sql/codigoMigrar.sql"
 copy_item "db/sql/inventario_ajustes.sql"
 copy_item "db/sql/create_ventas.sql"
+copy_item "db/sql/create_ventas_detalles.sql"
 
 copy_item "procesos"
 copy_item "procesos/jobManager.py"

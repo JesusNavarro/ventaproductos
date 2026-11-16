@@ -19,7 +19,7 @@ db_map = {
     "barrasVerificada": bool,
 	"imagenVerificada": bool,
     "numeroUnidades": lambda x: float(Fraction(x)) if "/" in x else (float(x) if x not in ["*","",None] else None),
-    "costoUnidad": float,
+    "costoUnidad":  lambda x: float(x) if x not in ["*","",None] else None,
     "costoPaquete": lambda x: float(x) if x not in ["*","",None] else None,
 	"costoKg": lambda x: float(x) if x not in ["*","",None] else None,
     "sugeridoUnidad": lambda x: float(x) if x not in ["*","",None] else None,

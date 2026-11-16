@@ -95,6 +95,26 @@ def normalize_text(text: str) -> str:
         .decode("ascii")
     )
 
+@app.route("/print/ticketEsclavo", methods=["POST"])
+def print_ticket_esclavo():
+    data = request.get_json(force=True)
+    lines = data.get("lines", [])
+    if not lines:
+        return jsonify({"error": "No lines to print"}), 400
+    print("/print/ticket received lines:")
+    for l in lines:
+        print(repr(l))
+    if config.soyRol(config.ESCLAVO_NAME) and config.tengoRol(config.MAESTRO_NAME):
+        maestroIP = config.DEVICE["MS_MAESTROS"][0]["direccionIP"]
+        url = rf"http://{maestroIP.strip()}:5000/print/ticket"
+        response = requests.post(url, json=data, timeout=30)
+        if response.status_code != 200:
+            print("Error syncing:", response.text)
+            return {"success": False , "error": response.text}
+        print(f"Hubo respuesta: {response.json()}")
+        resPagos = response.json()
+        return jsonify(resPagos)
+
 @app.route("/print/ticket", methods=["POST"])
 def print_ticket():
     data = request.get_json(force=True)
@@ -103,27 +123,30 @@ def print_ticket():
     if not lines:
         return jsonify({"error": "No lines to print"}), 400
 
-    p = Win32Raw("POS58 Printer")  # usa el nombre exacto
-
     print("/print/ticket received lines:")
     for l in lines:
         print(repr(l))
+    if config.soyRol(config.MAESTRO_NAME): 
+    
+        p = Win32Raw("POS58 Printer")  # usa el nombre exacto
 
-    # ---- PRINT ALL LINES AS-IS ----
-    for line in lines:
-        clean = normalize_text(line)
-        p.text(clean + "\n")
+        # ---- PRINT ALL LINES AS-IS ----
+        for line in lines:
+            clean = normalize_text(line)
+            p.text(clean + "\n")
 
-    # ---- SMALL FEED ----
-    #p._raw(b'\x1b\x4a\x30')  # ESC J 48
+        # ---- SMALL FEED ----
+        #p._raw(b'\x1b\x4a\x30')  # ESC J 48
 
-    # ---- PARTIAL CUT ----
-    p._raw(b'\x1d\x56\x01')  # GS V 1
+        # ---- PARTIAL CUT ----
+        p._raw(b'\x1d\x56\x01')  # GS V 1
 
-    p.close()
-    print("finished printing")
+        p.close()
 
-    return jsonify({"status": "printed"})    
+        print("finished printing")
+
+        return jsonify({"status": "printed"})
+
 
 @app.route("/print/image", methods=["POST"])
 def print_image():
@@ -178,6 +201,16 @@ sys.stderr = TimestampedWriter(open(config.LOG_FILE_PATH, "a"))
 @app.route("/")
 def index():
     return myRenderTemplate("index.html")
+
+@app.route("/creaEsclavo", methods=["GET","POST"])
+def create_esclavo():
+    return jsonify(bl.create_esclavo())
+
+
+@app.route("/infoDispositivo", methods=["POST"])
+def infoDispositivo():
+    dispositivoId = request.get_json()
+    return jsonify(config.getMSPorId(dispositivoId))
 
 @app.route("/workspace")
 def workspace():
@@ -354,11 +387,51 @@ def vender():
     #     "AMBIENTE": config.AMBIENTE
     # }
     #, context=context
-    return myRenderTemplate("vender.html")
+    return myRenderTemplate("vender.html");
 
 @app.route("/vender/guardar", methods=["POST"])
 def setVenta():
     return jsonify(bl.setVenta(request.get_json()))
+
+@app.route("/vender/setPago", methods=["POST"])
+def setPago():
+    return jsonify(bl.setPago(request.get_json()))
+
+@app.route("/vender/setPagos", methods=["POST"])
+def setPagos():
+    print(request.get_json())
+    return jsonify(bl.setPagos(request.get_json()))
+
+@app.route("/vender/getPago", methods=["POST"])
+def getPago():
+    return jsonify(bl.getPago(request.get_json()))
+
+@app.route("/vender/pullPagosEsclavo", methods=["POST"])
+def pullPagosEsclavo():
+    if config.soyRol(config.MAESTRO_NAME) and config.tengoRol(config.ESCLAVO_NAME):
+        params = request.get_json()
+        dispositivoId = params["dispositivoId"]
+        dispositivo = config.getMSPorId(dispositivoId)
+        if dispositivo is not None:
+            url = rf"http://{dispositivo['direccionIP']}:5000/vender/getPagos"
+            print(url)
+            infoPagos = params["infoPagos"]
+            response = requests.post(url, json=infoPagos, timeout=30)
+            if response.status_code != 200:
+                print("Error syncing:", response.text)
+                return {"success": False , "error": response.text}
+            print(f"Hubo respuesta: {response.json()}")
+            resPagos = response.json()
+    return jsonify(resPagos)
+
+
+@app.route("/vender/getPagos", methods=["POST"])
+def getPagos():
+    return jsonify(bl.getPagos(request.get_json()))
+
+@app.route("/vender/delPagos", methods=["POST"])
+def delPagos():
+    return jsonify(bl.deletePagos(request.get_json()))
 
 @app.route("/pull/ventas/esclavo", methods=["POST"])
 def pull_ventas_esclavo():
@@ -477,6 +550,12 @@ def receive_pendientes_registrar():
 def selVentasEsclavosPendientes():
     print("/ventas/pendientes/sel")
     return jsonify(bl.selVentasEsclavosPendientes())
+
+@app.route("/ventas/pendientes/selPago", methods=["POST"])
+def selVentasEsclavosPendientesPago():
+    dispositivoId = request.get_json()
+    print("/ventas/pendientes/selPago "+dispositivoId)
+    return jsonify(bl.selVentasEsclavosPendientesPago(dispositivoId))
 
 @app.route("/ventas/pendientes/registrar", methods=["POST"])
 def setVentasPendientes():

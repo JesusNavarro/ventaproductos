@@ -7,6 +7,8 @@ import db.dbMapper as mapper
 
 columnas_venta = ["dispositivoId", "productoId", "tipoVentaId", "precio", "precioVenta", "cantidad", "subtotal", "fechaVenta", "fechaInventario", "extraInfo", "cancelada", "sinInventario"]
 
+columnas_venta_detalles = ["dispositivoId", "fechaVenta", "total", "tipoPago", "pago", "cambio", "extraInfo"]
+
 db_map_venta = {
     "productoId" :  int,
     "tipoVentaId" : lambda x: int(x) if x  else None,
@@ -138,7 +140,10 @@ def del_ventas_viejas_slave():
     print("del_ventas_viejas_slave")
     with db.conn_ctx(config.BASE_ESCALVO_NAME, True) as conn:
         res = db.run_sql(conn, "delete from ventas WHERE fechaVenta < datetime('now', '-1 month') and fechaInventario is not null")
-        return res
+        if res["success"]:
+            res = db.run_sql(conn, "delete from ventas_detalles WHERE fechaVenta < datetime('now', '-1 month')")
+            if res["success"]:
+                return res
     return db.returnError()
 
 # def _sel_ventas_maestro(condiciones, condDict=None):
@@ -413,3 +418,73 @@ def setFechaVentaVenProds(prods, nuevaFecha):      # CHECKED
         return db.returnBlank()
         #res["resultado"]=prods
     return db.returnError("No soy maestro")
+
+
+db_map_pago = {
+    "total" :  float,
+    "pago" : float,
+    "cambio": lambda x: float(x) if x  else None,
+    "extraInfo": lambda x: str(x) if x  else None
+}
+
+def setPagos(infoPagos):
+    for ip in infoPagos:
+        print(ip)
+        res = _set_pago(ip)
+        if not res["success"]:
+            return db.returnError()
+    return db.returnBlank()
+
+def _set_pago(infoPago):
+    ip = mapper.one_to_db(infoPago, db_map_pago)
+    if any(row.get("fechaVenta") is None or row.get("dispositivoId") is None \
+        or row.get("total") is None or row.get("tipoPago") is None or row.get("pago") is None for row in ip):
+        raise Exception(f"Set pago no tiene valores requeridos {ip}")
+    with db.connPorRol(True) as conn:
+        conn.execute("BEGIN")
+        res = _delete_pago(ip, conn)
+        if res["success"]:
+            res = db.run_sql(conn, query=f"insert into ventas_detalles ({', '.join(columnas_venta_detalles)}) values (:{', :'.join(columnas_venta_detalles)})", data=ip )
+            if res["success"]:
+                return res
+    raise f"No se pudo guardar el pago {res['error']}"
+
+def setPago(infoPago):
+    return _set_pago(infoPago)
+    
+def getPago(infoPago):
+    ip = mapper.one_to_db(infoPago)
+    if any(row.get("fechaVenta") is None or row.get("dispositivoId") is None for row in ip):
+            raise Exception(f"Get pago no tiene valores requeridos {ip}")
+    with db.connPorRol() as conn:
+        res = db.run_sql(conn, query="select * from ventas_detalles where dispositivoId=:dispositivoId and fechaVenta=:fechaVenta", data=ip, fetchRows=True)
+        if res["success"]:
+            return res
+    raise f"No se pudo obtener el pago {res['error']}"
+
+def getPagos(infoPagos):
+    pagos = []
+    for ip in infoPagos:
+        res = getPago(ip)
+        if res["success"]:
+            if len(res["resultado"])==1:
+                pagos.append(res["resultado"][0])
+        else:
+            return db.returnError()
+    res = db.returnBlank()
+    res["resultado"] = pagos
+    return res
+
+def deletePagos(infoPagos):
+    with db.connPorRol(True) as conn:
+        for infoPago in infoPagos:
+            ip = mapper.one_to_db(infoPago, db_map_pago)
+            res = _delete_pago(ip, conn)
+            if not res["success"]:
+                return db.returnError()
+        return db.returnBlank()
+
+def _delete_pago(ip, conn):
+    if any(row.get("fechaVenta") is None or row.get("dispositivoId") is None for row in ip):
+        raise Exception(f"Delete pago no tiene valores requeridos {ip}")
+    return db.run_sql(conn, query= "delete from ventas_detalles where dispositivoId=:dispositivoId and fechaVenta=:fechaVenta", data=ip)

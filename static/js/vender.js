@@ -192,11 +192,13 @@ document.addEventListener("DOMContentLoaded", async () => {
         };
     }
 
-    btnGuardar.addEventListener("click", function(){guardarVenta()});
+    btnGuardar.addEventListener("click", async function(){
+        await guardarVenta();
+    });
 
-    btnSinInventario.addEventListener("click", function(){
+    btnSinInventario.addEventListener("click", async function(){
         if (!confirm(`¿Registrar venta SIN afectar el inventario?`)) return;
-        guardarVenta(1);
+        await guardarVenta(1);
     });
 
     btnImprimir.addEventListener("click", function(){print()});
@@ -441,6 +443,23 @@ document.addEventListener("DOMContentLoaded", async () => {
         fila.focus();
     }
 
+    async function dibujaTicket(res){
+        console.log(JSON.stringify(res["resultado"]));
+        let tdTicket = document.createElement("td");
+        tdTicket.id = "tdTicket";
+        let divTicket = await generateTicket(res["resultado"]);
+        divTicket.style.border="1px solid black";
+        tdTicket.style.verticalAlign = "top";
+        tdTicket.style.overflow = "visible";
+        const scaleWrapper = document.createElement("div");
+        scaleWrapper.style.display = "inline-block";
+        scaleWrapper.style.paddingLeft = "30px"; // requested left spacing
+        divTicket.style.transformOrigin = "top right";
+        scaleWrapper.append(divTicket);
+        tdTicket.append(scaleWrapper);
+        return tdTicket;
+    }
+
     async function guardarVenta(sinInventario=0) {
         //if (window.thisRol=="esclavo"){
         if (!confirm(`¿Guardar venta?`)) return;
@@ -469,32 +488,192 @@ document.addEventListener("DOMContentLoaded", async () => {
             // TICKET
             let resVenta = document.createElement("table");
             let trVenta = document.createElement("tr");
-            if (window.thisRol=="maestro"){
-                console.log(JSON.stringify(res["resultado"]));
-                let tdTicket = document.createElement("td");
-                let divTicket = generateTicket(res["resultado"]);
-                divTicket.style.border="1px solid black";
-                tdTicket.style.verticalAlign = "top";
-                tdTicket.style.overflow = "visible";
-                const scaleWrapper = document.createElement("div");
-                scaleWrapper.style.display = "inline-block";
-                scaleWrapper.style.paddingLeft = "30px"; // requested left spacing
-                divTicket.style.transformOrigin = "top right";
-                scaleWrapper.append(divTicket);
-                tdTicket.append(scaleWrapper);
+            //if (window.thisRol=="maestro"){
+                let tdTicket = await dibujaTicket(res);
                 trVenta.append(tdTicket);
-            }
+            //}
             let tablaVenta = generaTablaVenta(res["resultado"]);
             tablaVenta.classList.add("zebra");
             tablaVenta.style.width="auto";
             tablaVenta.style.border="1px solid black";
             let tdVenta = document.createElement("td");
-            tdVenta.append(tablaVenta);
+            let divPago = document.createElement("div");
+            let tablaPago = document.createElement("table");
+            let trHeaderPago = document.createElement("tr");
+            let tdHeader = document.createElement("td");
+            tdHeader.innerHTML = "<b>Total</b>";
+            trHeaderPago.append(tdHeader);
+            tdHeader = document.createElement("td");
+            tdHeader.innerHTML = "<b>Tipo Pago</b>";
+            trHeaderPago.append(tdHeader);
+            tdHeader = document.createElement("td");
+            tdHeader.innerHTML = "<b>Paga con</b>";
+            trHeaderPago.append(tdHeader);
+            tdHeader = document.createElement("td");
+            tdHeader.innerHTML = "<b>Cambio</b>";
+            trHeaderPago.append(tdHeader);
+            tablaPago.append(trHeaderPago);
+            let trPago = document.createElement("tr");
+            tablaPago.append(trPago);
+            let tdTotal = document.createElement("td");
+            tdTotal.style.fontSize = "25px";
+            tdTotal.innerHTML = "<b>$ "+parseSmartNumber(res.total)+"</b>";
+            /* inputTotal.setAttribute("type", "numeric");
+             tdTotal.append(inputTotal); */
+            trPago.append(tdTotal);
+            let tdPagoCon = document.createElement("td");
+            let opcionesPago = document.createElement("select");
+            let opt = document.createElement("option");
+            opt.value="E";
+            opt.textContent="Efectivo";
+            opcionesPago.options.add(opt);
+            opt = document.createElement("option");
+            opt.value="R";
+            opt.textContent="Transferencia";
+            opcionesPago.options.add(opt);
+            opt = document.createElement("option");
+            opt.value="T";
+            opt.textContent="Tarjeta";
+            opcionesPago.options.add(opt);
+            opcionesPago.options[0].selected = true;
+            opcionesPago.style.fontSize = "25px";
+            tdPagoCon.append(opcionesPago);
+            trPago.append(tdPagoCon);
+            let tdPago = document.createElement("td");
+            let inputPago = document.createElement("input");
+            inputPago.setAttribute("type", "number");
+            inputPago.setAttribute("size", 10);
+            inputPago.style.width = 140;
+            inputPago.setAttribute("step","any");
+            inputPago.value = res.total;
+            inputPago.style.fontSize = "25px";
+            inputPago.setAttribute("min", res.total);
+            tdPago.append(inputPago);
+            trPago.append(tdPago);
+            let tdCambio = document.createElement("td");
+            let inputCambio = document.createElement("input");
+            inputCambio.setAttribute("type", "number");
+            inputCambio.setAttribute("size", 10);
+            inputCambio.style.width = 140;
+            inputCambio.setAttribute("step","any");
+            inputCambio.style.fontSize = "25px";
+            inputCambio.setAttribute("min", 0);
+            tdCambio.append(inputCambio);
+            trPago.append(tdCambio);
+            inputPago.addEventListener("focus", e => {
+                inputPago.value="";
+                inputCambio.value="";
+            });
+            inputCambio.addEventListener("focus", e => {
+                inputCambio.value="";
+                inputPago.value="";
+            });
+            inputPago.addEventListener("input", e => {
+                if (inputPago.value != "") {
+                    let val = parseSmartNumber(inputPago.value,2) - res.total;
+                    if (Number.isInteger(val)){
+                        inputCambio.value= val;
+                    } else {
+                        inputCambio.value= Number(val).toFixed(2);
+                    }
+                } else {
+                    inputCambio.value="";
+                }
+            });
+            inputCambio.addEventListener("input", e => {
+                if (inputCambio.value != "") {
+                    let val = res.total + parseSmartNumber(inputCambio.value,2);
+                    if (Number.isInteger(val)){
+                        inputPago.value= val;
+                    } else {
+                        inputPago.value= Number(val).toFixed(2);
+                    }
+                } else {
+                    inputPago.value="";
+                }
+            });
+            opcionesPago.addEventListener("change", function(){
+                inputPago.value = res.total;
+                inputCambio.value = "";
+            });
+            let tdGuardaPago = document.createElement("td");
+            let inputGuardaPago = document.createElement("button");
+            inputGuardaPago.innerText = 'Guardar Pago';
+            inputGuardaPago.style.fontSize = "25px";
+            inputGuardaPago.addEventListener("click", async function(){
+                let pagoVal = Number(inputPago.value);
+                let cambioVal = Number(inputCambio.value);
+                if (pagoVal==0){
+                    inputPago.value = res.total;
+                    inputCambio.value = "";
+                } else if (pagoVal<res.total){
+                    alert("El monto del pago es insuficiente");
+                    return;
+                }
+                let infoPago = {
+                    "dispositivoId": configDev.MS_SOY.dispositivoId,
+                    "fechaVenta": res.fechaVenta,
+                    "total": res.total,
+                    "tipoPago": opcionesPago.value,
+                    "pago": Number(inputPago.value),
+                    "cambio": Number(inputCambio.value),
+                    "extraInfo": inputInfoPago.value
+                };
+                let resPago = await myfetch("/vender/setPago", infoPago);
+                if (resPago["success"]){
+                    centerMessage("Pago Guardado");
+                    // if (window.thisRol=="maestro"){
+                        tdTicket = document.getElementById("tdTicket");
+                        if (tdTicket) {
+                            tdTicket.innerHTML="";
+                            let newTicket = await dibujaTicket(res);
+                            //tdTicket.innerHTML=newTicket.innerHTML;
+                            tdTicket.replaceChildren(newTicket);
+                        }
+                        // trVenta.append(tdTicket);
+                    // }
+                } else {
+                    centerMessage("Pago No Guardado");
+                }
+            });
+            tdGuardaPago.append(inputGuardaPago);
+            trPago.append(tdGuardaPago);
+            trPago = document.createElement("tr");
+            tdPago = document.createElement("td");
+            tdPago.innerText = "Comentario: ";
+            trPago.append(tdPago);
+            tdPago = document.createElement("td");
+            tdPago.colSpan = 4;
+            let inputInfoPago = document.createElement("input");
+            inputInfoPago.setAttribute("type", "text");
+            inputInfoPago.style.width = "100%";
+            tdPago.append(inputInfoPago);
+            trPago.append(tdPago);
+            tablaPago.append(trPago);
+            let divTablaVenta = document.createElement("div");
+            divPago.append(tablaPago);
+            divPago.append(document.createElement("br"));
+            tdVenta.append(divPago);
+            divTablaVenta.append(tablaVenta);
+            tdVenta.append(divTablaVenta);
             trVenta.append(tdVenta);
             resVenta.append(trVenta);
             resVenta.style.width = "auto";
             resVenta.style.margin = "0 auto";
             mensaje.append(resVenta);
+            if (window.thisRol=="maestro"){
+                //inputPago.value="";
+                [inputPago, inputCambio, inputInfoPago].forEach(input => {
+                    input.addEventListener("keydown", (e) => {
+                            if (e.key === "Enter") {
+                                e.preventDefault();
+                                inputGuardaPago.click();
+                            }
+                        });
+                });
+                document.activeElement?.blur();
+                inputPago.focus();
+            }
         } else {
             mensaje.innerHTML = `❌ Error al guardar: ${res.error}`;
             playErrorSound();
@@ -1177,7 +1356,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             function cantChange(){
                 precioInput.value = parseSmartNumber(parseFloat(cantInput.value) * precioVenta);
             }
-            cantInput.onchange = cantChange;
+            cantInput.addEventListener('input', cantChange);
             cantInput.addEventListener("keydown", function(e) {
                 if (e.key === "Enter") {
                     e.preventDefault();

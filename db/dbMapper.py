@@ -19,15 +19,20 @@ def _normalize_rows(data):
 def _dict_to_db(row: dict, db_map: dict, execDateTime=None):
     out = {}
     for key, value in row.items():
-        if key.startswith("__"):
-            continue
-
-        if value is None:
-            out[key] = None
-        elif key in db_map and db_map[key] != "setDateTime":
-            out[key] = db_map[key](value)
-        else:
-            out[key] = value
+        try: 
+            if key.startswith("__"):
+                continue
+            if value is None:
+                out[key] = None
+            elif key in db_map and db_map[key] != "setDateTime":
+                out[key] = db_map[key](value)
+            else:
+                out[key] = value
+        except Exception as e:
+                print(e)
+                print(row)
+                print(key, value)
+                raise e
 
     if execDateTime is not None:
         for key, rule in db_map.items():

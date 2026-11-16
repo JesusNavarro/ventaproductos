@@ -257,7 +257,7 @@ if (thisIP!=configDev["MS_SOY"]["direccionIP"]){
             for (ch of selectedCh){
                 let startDatetime = new Date();
                 console.log("/ventas/pendientes/registrar Start:", startDatetime.toISOString());
-                res = await myfetch("/ventas/pendientes/registrar", ch["value"]);
+                let res = await myfetch("/ventas/pendientes/registrar", ch["value"]);
                 let endDatetime = new Date();
                 console.log("/ventas/pendientes/registrar End:", endDatetime.toISOString());
                 console.log("/ventas/pendientes/registrar Difference:", endDatetime-startDatetime, "ms");
@@ -270,6 +270,38 @@ if (thisIP!=configDev["MS_SOY"]["direccionIP"]){
                     resultados.innerHTML=message;
                     //centerMessage(message);
                     return;
+                }
+                centerMessage("Obteniendo pagos de "+ch.dataset.nombre, true);
+                res = await myfetch("/ventas/pendientes/selPago", ch["value"]);
+                let pagosPendientes = null;
+                if (res["success"]){
+                    pagosPendientes =  await myfetch("/vender/pullPagosEsclavo", {"dispositivoId": ch["value"], "infoPagos": res["resultado"]});
+                    if (pagosPendientes["success"]){
+                        let message ="<br/>✅ Se obtuvo datos de pagos de "+ch.dataset.nombre;
+                        resultados.innerHTML+=message;
+                    } else {
+                        let message = "<br/>❌ No se pudo obtener pagos del dispositivo "+ch.dataset.nombre;
+                        resultados.innerHTML+=message;
+                        return;
+                    }
+                } else {
+                    let message = "<br/>❌ No se pudo obtener pagos pendientes para "+ch.dataset.nombre;
+                    resultados.innerHTML+=message;
+                    return;
+                }
+                centerMessage("Obteniendo pagos de "+ch.dataset.nombre, false);
+                if (pagosPendientes && pagosPendientes["resultado"] && pagosPendientes["resultado"].length>0){
+                    centerMessage("Guardando pagos de "+ch.dataset.nombre, true);
+                    res = await myfetch("/vender/setPagos", pagosPendientes["resultado"]);
+                    if (res["success"]){
+                        let message ="<br/>✅ Se guardaron los pagos para "+ch.dataset.nombre;
+                        resultados.innerHTML+=message;
+                    } else {
+                        let message = "<br/>❌ No se pudo guardar pagos para "+ch.dataset.nombre;
+                        resultados.innerHTML+=message;
+                        return;
+                    }
+                    centerMessage("Guardando pagos de "+ch.dataset.nombre, false);
                 }
                 //return;
                 centerMessage("Enviando inventario a "+ch.dataset.nombre, true);
@@ -537,25 +569,26 @@ if (thisIP!=configDev["MS_SOY"]["direccionIP"]){
                     let val = prod[c] || "";
                     const esDinero = ["precio", "precioventa", "subtotal", "costo"].some(k => c.toLowerCase().includes(k));
                     const esNumero = ["precio", "precioventa", "subtotal", "cantidad", "costo"].some(k => c.toLowerCase().includes(k));
-                    const rojo = esNumero && val < 0;
-                    //if (rojo)  mytd.classList.add(`red`);
-                    //|| prod["existenciaNuevaUnidades"]<=0
-                    // if (c=="descExistenciaNueva" && (prod["existenciaNuevaUnidades"]<=prod["minimoUnidades"] )){
-                    //     mytd.classList.add(`red`);
-                    //     muestraBtnInventario = true; }
-                        //|| prod["existenciaNuevaPaquetes"]<=0
-                    
-                    if (c=="descExistenciaNueva" && (prod["existenciaNuevaPaquetes"]<=prod["minimoPaquetes"] ) &&
-                        prod["seCompraPor"]=="paquete"){
+                    let rojo = esNumero && val <= 0;
+                    if (rojo){
                         mytd.classList.add(`red`);
-                        muestraBtnInventario = true; }
-                    //     //|| prod["existenciaNuevaKgs"]<=0
-                    // if (c=="descExistenciaNueva" && (prod["existenciaNuevaKgs"]<=prod["minimoKgs"] )){
-                    //     mytd.classList.add(`red`);
-                    //     muestraBtnInventario = true; }
-                    if (c=="descExistenciaNueva" && prod["fechaInventario"]){
-                        mytd.classList.remove(`red`);
                     }
+                        if (c=="descExistenciaNueva"){
+                            console.log(prod);
+                            if (prod["existenciaNuevaUnidades"]!=null && prod["existenciaNuevaUnidades"]<=(prod["minimoUnidades"]??0)){
+                                mytd.classList.add(`red`);
+                                muestraBtnInventario = true;
+                            } else if (prod["existenciaNuevaPaquetes"]!=null && prod["existenciaNuevaPaquetes"]<=(prod["minimoPaquetes"]??0)){
+                                mytd.classList.add(`red`);
+                                muestraBtnInventario = true; 
+                            } else if (prod["existenciaNuevaKgs"]!=null && prod["existenciaNuevaKgs"]<=(prod["minimoKgs"]??0)){
+                                mytd.classList.add(`red`);
+                                muestraBtnInventario = true; 
+                            }
+                            if (prod["fechaInventario"]){
+                                mytd.classList.remove(`red`);
+                            }
+                        }
                     if (c=="descExistenciaNueva" || c=="descCantidadAccum" || c=="descCantidad"){
                         //console.log(val);
                         const {mainpart, extra} = splitParenTextSimple(val);

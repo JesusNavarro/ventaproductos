@@ -5,6 +5,10 @@ linkHP.rel = 'stylesheet';
 linkHP.href = '/static/css/helpers.css';
 document.head.appendChild(linkHP);
 
+if (configDev && configDev.MS_SOY){
+    window.thisRol = configDev.MS_SOY.rol;
+}
+
 function numMuestraVenta(prod){
     let i = 0;
     i+= prod.muestraUnidad;
@@ -12,6 +16,8 @@ function numMuestraVenta(prod){
     i+= prod.muestraKg;
     return i;
 }
+
+const tiposPago = {"E": "Efectivo", "R": "Transferencia", "T": "Tarjeta"}
 
 let audioCtx;
 
@@ -566,7 +572,7 @@ function centerMessage(msg, mode=2, color="yellow") {
 const FULL_LINE_CHARS = 31;
 
 async function loadIVA() {
-    res = await myfetch("/ajustes/sel", {"variable":"IVA"})
+    let res = await myfetch("/ajustes/sel", {"variable":"IVA"});
     if (res.success && res.resultado.length==1) {
         //console.log(res.resultado);
         window.IVA = parseFloat(res.resultado[0]["valor"]);
@@ -685,7 +691,7 @@ function groupAndSortByFechaVenta(productos) {
 //     return divTicket;
 // }
 
-function generateTicket(productos) {
+async function generateTicket(productos) {
   let divTicket = document.createElement("div");
   divTicket.id = "ticket";
   divTicket.classList.add("ticket");
@@ -709,7 +715,12 @@ function generateTicket(productos) {
   // 🔽 GROUP + SORT HERE
   const gruposOrdenados = groupAndSortByFechaVenta(productos);
 
-  gruposOrdenados.forEach(({ fecha, productos }) => {
+  let totalesMultiplesVentas = [];
+
+  console.log("gruposOrdenados "+gruposOrdenados);
+
+  //gruposOrdenados.forEach(({ fecha, productos }) => function(){
+  for (const {fecha, productos} of gruposOrdenados){
     // Fecha
     let ticketDateTime = document.createElement("div");
     ticketDateTime.classList.add("ticketDatetime");
@@ -742,9 +753,46 @@ function generateTicket(productos) {
     //ticketTotal.textContent = "Total: $" + totalGrupo.toFixed(2);
     ticketTotal.textContent = "\n"+totalLine;
     //ticketTotal.append(totalLine);
+    
+
+    console.log("productos grupo");
+    console.log(JSON.stringify(productos));
+    let infoPago = await myfetch("/vender/getPago", {"dispositivoId": productos[0]["dispositivoId"], "fechaVenta": fecha});
+    console.log(JSON.stringify(infoPago));
+    if (infoPago["success"] && infoPago["resultado"] && infoPago["resultado"].length==1){
+        let pagoRes = infoPago["resultado"][0];
+        let tipoPago = tiposPago[pagoRes["tipoPago"]];
+        let pagoLine = printThreeValuesTicket(null, "Pagó: "+tipoPago, "$"+Number(pagoRes["pago"]).toFixed(2));
+        console.log(pagoLine);
+        ticketTotal.textContent += "\n"+pagoLine;
+        pagoLine = pagoRes["tipoPago"]=="E" && (Number(pagoRes["cambio"])??0)>0 ? printThreeValuesTicket(null, "Cambio:",  "$"+Number(pagoRes["cambio"]??0).toFixed(2) ) : "";
+        console.log(pagoLine);
+        ticketTotal.textContent += "\n"+pagoLine;
+    }
     ticketInner.append(ticketTotal);
 
-  });
+    totalesMultiplesVentas.push(totalGrupo);
+
+  };
+
+  if (totalesMultiplesVentas.length>1){
+    let ticketSummary = document.createElement("div");
+    ticketSummary.style.textAlign = "center";
+    ticketSummary.classList.add("ticketSummary");
+    ticketSummary.textContent = "\n"+("=".repeat(FULL_LINE_CHARS))+"\nResumen de "+totalesMultiplesVentas.length+" ventas\n"+("=".repeat(FULL_LINE_CHARS))+"\n";
+    let num_ven = 0;
+    let gran_total = 0;
+    totalesMultiplesVentas.forEach( tg => {
+        num_ven = num_ven+1;
+        let totalLine = printThreeValuesTicket(null, "Venta #"+num_ven+":",  "$" + tg.toFixed(2))+"\n";
+        ticketSummary.textContent +=totalLine;
+        gran_total+=tg;
+        }
+    );
+    ticketSummary.textContent += "-".repeat(FULL_LINE_CHARS)+"\n"+printThreeValuesTicket(null, "Gran Total:",  "$" + gran_total.toFixed(2));
+    ticketInner.append(ticketSummary);
+
+  }
 
   let ticketFooter = document.createElement("div");
   ticketFooter.style.textAlign = "center";
@@ -755,6 +803,7 @@ function generateTicket(productos) {
   divTicket.append(ticketInner);
 
   printTicket.addEventListener("click", async () => {
+    console.log("CLICK imprimir");
     await printTicketEscPos(ticketInner);
   });
 
@@ -887,6 +936,7 @@ function descExistencia(producto){
 }
 
 function extractTicketText(ticketInner) {
+  console.log("extractTicketText");
   const lines = [];
 
   /* ───── HEADER (ONCE) ───── */
@@ -947,6 +997,15 @@ function extractTicketText(ticketInner) {
       //lines.push(""); // spacing between sales
     }
 
+  const ticketSummary = ticketInner.querySelector(".ticketSummary")?.innerText;
+  if (ticketSummary) {
+    let ticketSummaryLines = ticketSummary.split(/\r?\n/);
+    ticketSummaryLines.forEach(line => {
+        lines.push(centerLine(line, FULL_LINE_CHARS));
+    });
+    //lines.push(""); // spacing after header
+  }
+
   const ticketFooter = ticketInner.querySelector(".ticketFooter")?.innerText;
   if (ticketFooter) {
     let ticketFooterLines = ticketFooter.split(/\r?\n/);
@@ -961,14 +1020,23 @@ function extractTicketText(ticketInner) {
 async function printTicketEscPos(ticketInner) {
   const lines = extractTicketText(ticketInner);
   console.log(lines);
-  await fetch("/print/ticket", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ lines })
- });
+  if (!window.thisRol || (window.thisRol && window.thisRol=="maestro")){
+    await fetch("/print/ticket", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lines })
+    });
+  }
+  if (window.thisRol && window.thisRol=="esclavo"){
+    await fetch("/print/ticketEsclavo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lines })
+    });
+  }
 }
 
-function openTicketModal(productos){
+async function openTicketModal(productos){
     console.log("openTicketModal")
     document.getElementById("ticketModal")?.remove();
     const ticketModal = document.createElement("div");
@@ -998,7 +1066,7 @@ function openTicketModal(productos){
     const previewWrapper = document.createElement("div");
     previewWrapper.className = "ticketPreviewWrapper";
 
-    const ticket =generateTicket(productos);
+    const ticket = await generateTicket(productos);
     previewWrapper.append(ticket);
     ticketBody.append(previewWrapper);
     ticketModalContent.append(ticketModalControls, ticketBody);

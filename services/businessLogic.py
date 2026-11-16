@@ -317,6 +317,31 @@ def setActivoVenProds(prods):	# CHECKED
 		raise Exception(f"No se pudo activar venta {prods}")
 	return res
 
+def setPago(infoPago):
+	print("setPago")
+	print(infoPago)
+	res = ven.setPago(infoPago);
+	if not res["success"]:
+		raise Exception(f"No se pudo guardar pago {infoPago}")
+	return res
+
+def setPagos(infoPagos):
+	return ven.setPagos(infoPagos)
+
+def getPago(infoPago):
+	print("getPago")
+	print(infoPago)
+	res = ven.getPago(infoPago);
+	if not res["success"]:
+		raise Exception(f"No se pudo obtener pago {infoPago}")
+	return res
+
+def getPagos(infoPagos):
+	return ven.getPagos(infoPagos)
+
+def deletePagos(infoPagos):
+	return ven.deletePagos(infoPagos)
+
 # VENTAS MAESTRO *********************************
 
 # BORRA VENTAS PENDIENTES DE LOS ESCLAVOS EN EL MAESTRO VENTAS_ESCLAVOS
@@ -368,6 +393,14 @@ def selVentasEsclavosPendientes(dispositivoId=None, sinInventario=False):	# CHEC
 			raise Exception(res["error"])
 	else:
 		return db.returnError("No soy maestro")
+
+def selVentasEsclavosPendientesPago(dispositivoId=None):
+	res = selVentasEsclavosPendientes(dispositivoId)
+	ventasPago = set()
+	for r in res["resultado"]:
+		ventasPago.add((r["dispositivoId"], r["fechaVenta"]))
+	res["resultado"] = [{"dispositivoId": d, "fechaVenta": f} for d, f in ventasPago]
+	return res
 	
 # VENTAS ESCLAVO *********************************
 
@@ -552,6 +585,5 @@ def entregasBuscar(productosEntrega, costoTieneIva):
 			res["resultado"]=productosBuscados
 	return res
 
-
-
-	
+def create_esclavo():
+	return db.create_esclavo()
